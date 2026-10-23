@@ -44,20 +44,32 @@ Ini contoh gaya pelabelan, **bukan** angka untuk tuning.
 
 ---
 
-## Status 23 Okt: kode M2–M6 siap, menunggu skor dari data resmi
+## Status 23 Okt: M3–M6 selesai, M7a (v5, v6) menunggu skor
 
-Semua tahap ada di `make_submission.py --stage v0..v4`. **Langkah berikutnya untukmu**, di
-terminal sendiri (Claude Code diblokir dari perintah ini):
-```bash
-bash experiments/run_all.sh
-```
-Script ini menjalankan v0–v4, memvalidasi tiap file, lalu men-skor semuanya. Seluruh outputnya
-aman ditempel. Error tidak dicetak, tapi disimpan di `data/cache/run_all.log`. Baca sendiri dan
-ceritakan error-nya tanpa menempel isi data.
+**Run pertama di data resmi (23 Okt)**, window publik, 17 possession:
+
+| tahap | macroF1 | spellF1 [5–95%] | poss (asli 17) | alive/dead F1 | team acc | recall D |
+|---|---|---|---|---|---|---|
+| v0 = smooth50 | 0.6207 | 0.3256 [0.214, 0.447] | 26 | 0.899 | 0.835 | 0.21 |
+| v1 Viterbi | 0.6362 | 0.3304 [0.217, 0.444] | 29 | 0.893 | 0.789 | 0.34 |
+| v2 jarak meter | 0.6518 | 0.3333 [0.200, 0.467] | 25 | 0.893 | 0.814 | 0.34 |
+| v3 dead-ball | 0.6816 | 0.3707 [0.234, 0.498] | 24 | 0.913 | 0.853 | 0.32 |
+| v4 Smart Tagging | **0.6821** | **0.4316** [0.284, 0.590] | 21 | **0.924** | 0.845 | 0.32 |
+
+Seluruh pertandingan (dari `validate_submission`): jumlah possession 669 → 519 → 432 → 424 → 366,
+rata-rata 7,6 → 10,5 s. `D` mengisi 39% frame yang dinilai di v4, wajar karena waktu bola
+bergerak hanya sekitar 55–60 dari ~95 menit.
+
+**Cara membaca:** semua indikator membaik tiap tahap, tapi interval bootstrap tumpang tindih, jadi
+window publik belum membuktikan v4 > v0. Kelemahan terbesar: dead ball yang dikira hidup (v4:
+996 dari 1.469 frame `D` publik ditebak H/A). Itu sasaran v5 dan v6.
+
+**Langkah berikutnya untukmu:** jalankan lagi `bash experiments/run_all.sh` (sekarang v0–v6) dan
+tempel outputnya.
 
 > **Prompt:**
-> Ini output `bash experiments/run_all.sh`: <tempel output>. Cek M3 (decul_v0 = smooth50), lalu
-> bandingkan v1–v4 dengan bootstrap dan sarankan apa yang dikerjakan untuk M7.
+> Ini output `bash experiments/run_all.sh` dengan v5 dan v6: <tempel output>. Bandingkan dengan
+> v4 memakai bootstrap dan semua indikator, lalu putuskan tahap mana yang dibekukan untuk M7.
 
 ---
 
@@ -84,7 +96,11 @@ deterministik.
 > skor di window publik dengan bootstrap, lalu jelaskan hasilnya dibandingkan baseline_smooth50.
 > Jangan memilih biaya pergantian dengan mencari skor tertinggi di window publik.
 
-## M3 — Data datang: reproduksi baseline 🔄 (data sudah ada; `--stage v0` di `run_all.sh`)
+## M3 — Data datang: reproduksi baseline ✅
+
+`decul_v0` identik dengan `baseline_smooth50` di semua metrik, dan `decul_v1` (dari ATD resmi)
+identik dengan `decul_v1_public` (dari `baseline_raw.csv` publik). Data, alignment, dan
+environment terbukti benar.
 
 **Tujuan:** memastikan data, alignment, dan environment benar di mesinmu.
 **Kamu jalankan sendiri** (di terminal, bukan lewat AI):
@@ -102,7 +118,7 @@ python evaluation/run_evaluation.py
 > run_evaluation.py dan validate_submission.py: <tempel output>. Apakah Decul sudah identik dengan
 > baseline_smooth50? Kalau belum, apa yang harus saya cek?
 
-## M4 — Fitur dan bukti per frame dari ATD 🔄 (kode siap: `--stage v2`)
+## M4 — Fitur dan bukti per frame dari ATD ✅ (`--stage v2`, hasil di tabel Status)
 
 Parser dan fitur sudah dites di sampel publik Metrica (`experiments/check_metrica_sample.py`):
 144 ribu frame diparse dalam 2,9 s, termasuk format tanpa kolom kecepatan.
@@ -119,7 +135,7 @@ sampel publik Metrica (github.com/metrica-sports/sample-data).
 > `starter/baseline.py`, lalu sambungkan ke Viterbi dari M2 di `make_submission.py`. Uji dulu di
 > data sampel publik Metrica di `experiments/`. Saya yang akan menjalankannya di data resmi.
 
-## M5 — Detektor dead-ball 🔄 (kode siap: `--stage v3`)
+## M5 — Detektor dead-ball ✅ (`--stage v3`; lanjutan di v6)
 
 **Tujuan:** membuat state `D` berarti "permainan berhenti", bukan sekadar "bola hilang dari
 tracking". Bukti: bola di luar batas lapangan, semua pemain melambat, bola diam.
@@ -131,7 +147,7 @@ yang tidak tumpang tindih.
 > Kerjakan M5 di docs/ROADMAP.md. Tambahkan bukti dead-ball ke `solution/evidence.py`. Ini output
 > scorer versi M4 saya: <tempel output>. Fokus pada alive/dead F1.
 
-## M6 — Prior dari Smart Tagging 🔄 (kode siap: `--stage v4`, default)
+## M6 — Prior dari Smart Tagging ✅ (`--stage v4`, default saat ini)
 
 **Tujuan:** memakai tag tim dan set piece sebagai bukti tambahan, terutama saat bola lama hilang.
 Ingat: tag `N/A` (semua throw-in) dan interval fase ≠ possession.
@@ -143,7 +159,13 @@ Ingat: tag `N/A` (semua throw-in) dan interval fase ≠ possession.
 > bukti per frame, tangani `Team = N/A` secara eksplisit, dan buat flag di `make_submission.py`
 > supaya saya bisa membandingkan dengan dan tanpa Smart Tagging.
 
-## M7 — Uji robustness dan bekukan parameter ⬜
+## M7 — Uji robustness dan bekukan parameter 🔄
+
+**M7a, kandidat terakhir (kode siap, menunggu skor):**
+- `v5`: bola yang melaju lebih dari 7 m/s (umpan, tendangan) tidak dihitung sebagai bukti tim.
+  Sentuhan atau defleksi tanpa kontrol bukan pergantian possession (CHALLENGE.md).
+- `v6`: bola diam di garis atau di titik tengah dianggap menunggu throw-in, corner, atau
+  kick-off, sehingga condong ke `D`. Sasarannya recall `D`.
 
 **Tujuan:** memastikan perbaikan itu nyata, bukan kebetulan dari 17 possession.
 **Cek:** `--bootstrap 1000`; jumlah dan durasi possession masuk akal untuk dua babak; kedua babak

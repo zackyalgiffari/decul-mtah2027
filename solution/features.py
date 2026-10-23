@@ -4,7 +4,9 @@
     d_home, d_away float  metres from the ball to the nearest home / away player (NaN if unknown)
     ball_out       bool   ball beyond the lines by more than OUT_MARGIN_M
     player_speed   float  mean speed of all tracked players, averaged over a centred window
+    ball_speed     float  m/s over the last BALL_SPEED_FRAMES (NaN where unknown)
     ball_static    bool   ball seen and barely moving for a whole centred window
+    restart_spot   bool   ball static on a line or on the centre spot: waiting for a restart
 
 Short gaps in the ball track are interpolated because the ball vanishes for a few frames in
 every crowded moment; long gaps are left alone, because inventing a ball position for seconds
@@ -20,6 +22,10 @@ SPEED_WINDOW_FRAMES = 50   # +/- 2 s for the mean player speed
 STATIC_WINDOW_FRAMES = 12  # +/- 0.5 s with the ball under STATIC_MS counts as standing still
 STATIC_MS = 0.5
 BALL_SPEED_FRAMES = 5      # ball speed measured over 0.2 s, enough to average out jitter
+# A throw-in, corner or kick-off is taken with the ball on a line or on the centre spot. Goal
+# kicks and free kicks are left out: a goalkeeper holding the ball in the goal area, or a player
+# standing on it in midfield, looks the same and is in possession.
+RESTART_ZONE_M = 1.5
 
 
 def interpolate_gaps(track, max_gap):
@@ -91,5 +97,12 @@ def compute(track, pitch, fps):
     seen_count = np.convolve(seen, np.ones(window), mode="same")
     ball_static = (seen_count == window) & (slow_count == window)
 
+    with np.errstate(invalid="ignore"):
+        to_line = np.fmin(np.fmin(np.abs(ball[:, 0]), np.abs(ball[:, 0] - length)),
+                          np.fmin(np.abs(ball[:, 1]), np.abs(ball[:, 1] - width)))
+        to_centre = np.hypot(ball[:, 0] - length / 2.0, ball[:, 1] - width / 2.0)
+        restart_spot = ball_static & ((to_line <= RESTART_ZONE_M) | (to_centre <= RESTART_ZONE_M))
+
     return {"ball_seen": ball_seen, "d_home": d_home, "d_away": d_away, "ball_out": ball_out,
-            "player_speed": player_speed, "ball_static": ball_static}
+            "player_speed": player_speed, "ball_speed": step, "ball_static": ball_static,
+            "restart_spot": restart_spot}

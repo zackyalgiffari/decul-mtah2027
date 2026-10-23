@@ -35,9 +35,28 @@ The pipeline is built in stages so each layer's contribution is measured on its 
 | v2 | team evidence from metres to the nearest home and away player; ball gaps ≤ 0.5 s interpolated |
 | v3 | dead-ball evidence: ball over the line, players walking, ball standing still |
 | v4 | Smart Tagging as a prior on which team has the ball |
+| v5 | no team evidence while the ball travels faster than 7 m/s (a pass or shot passing a player) |
+| v6 | a ball standing still on a line or the centre spot counts towards a stoppage (restart waiting) |
 
 Parameters are football priors written in each module's `# Params` block, not values searched on
 the public five minutes, which hold too few possessions to choose between versions.
+
+**Results on the public five minutes** (17 possessions; 5–95% block-bootstrap interval, 1000
+draws). This window checks correctness; it cannot rank stages whose intervals overlap.
+
+| stage | macroF1 | spellF1 [5–95%] | possessions (truth 17) | alive/dead F1 |
+|---|---|---|---|---|
+| v0 = published baseline | 0.6207 | 0.3256 [0.214, 0.447] | 26 | 0.899 |
+| v1 | 0.6362 | 0.3304 [0.217, 0.444] | 29 | 0.893 |
+| v2 | 0.6518 | 0.3333 [0.200, 0.467] | 25 | 0.893 |
+| v3 | 0.6816 | 0.3707 [0.234, 0.498] | 24 | 0.913 |
+| v4 | 0.6821 | 0.4316 [0.284, 0.590] | 21 | 0.924 |
+
+Over the full match the number of predicted possessions falls from 669 (v0) to 366 (v4), with
+mean duration rising from 7.6 s to 10.5 s; dead ball covers 39% of graded frames, in line with
+the 55–60 minutes of effective playing time typical of a top-flight match. v0 reproduces the
+published baseline exactly, and v1 computed from the ATD equals v1 computed from the published
+`baseline_raw.csv`, which confirms the parsing and frame alignment.
 
 ## 2. Assets used and dropped
 
@@ -67,7 +86,18 @@ _Draft._
 
 ## 4. Limitations
 
-_Where it fails, and what we would fix with more time._
+_Draft._
+
+- **Stoppages with a visible ball.** The largest remaining error is dead ball labelled as play
+  (v4, public window: 996 of 1,469 dead-ball frames predicted H or A; every frame predicted D was
+  correct). A ball placed for a throw-in or corner looks like a ball at a player's feet. Stage
+  v6 adds a restart cue for exactly this case.
+- **Validation.** The only labelled data is five minutes with 17 possessions, so stage choices
+  rest on consistent movement across all diagnostics plus football priors, not on one score.
+- **Hand-set priors.** Durations, distances and odds are set from football knowledge, not
+  learned; a model trained on labelled matches could set them better.
+- **No video.** The ball is missing on 41% of graded frames and we do not re-detect it; that is
+  the obvious next step with more time.
 
 ## 5. Reproduction
 

@@ -67,6 +67,16 @@ STATIC_BALL_ODDS = 0.5
 # tags are automatic and a phase is not a possession (DATA.md).
 TAG_TEAM_ODDS = 2.0
 
+# v5: control needs a ball that is being controlled. A dribbled ball rarely moves faster than a
+# sprinting player; passes, clearances and shots do. Above FAST_BALL_MS the ball is travelling,
+# and the player it passes says nothing about who has it (CHALLENGE.md: a touch or a deflection
+# without control is not a change of possession).
+FAST_BALL_MS = 7.0
+
+# v6: a ball standing still on a line or on the centre spot is waiting for a throw-in, corner or
+# kick-off (solution/features.py, restart_spot).
+RESTART_ODDS = 0.2
+
 
 def _clip(p):
     return np.clip(p, CLIP, 1.0 - CLIP)
@@ -118,17 +128,23 @@ def alive_odds_dead_ball(features):
     return odds
 
 
-def from_features(features, dead_ball=False, team_prior=None):
-    """v2-v4: log-likelihoods from solution/features.py output.
+def from_features(features, dead_ball=False, team_prior=None, fast_ball=False, restart=False):
+    """v2-v6: log-likelihoods from solution/features.py output.
 
     dead_ball   add the v3 dead-ball cues to P(alive)
     team_prior  per-frame odds multiplier on home (v4, from solution/tagging.py), or None
+    fast_ball   v5: no team evidence while the ball travels faster than FAST_BALL_MS
+    restart     v6: a ball waiting on a line or the centre spot counts towards a dead ball
     """
     p_alive = np.where(features["ball_seen"], P_ALIVE_SEEN, P_ALIVE_UNSEEN)
     if dead_ball:
         p_alive = _prob(_odds(p_alive) * alive_odds_dead_ball(features))
+    if restart:
+        p_alive = _prob(_odds(p_alive) * np.where(features["restart_spot"], RESTART_ODDS, 1.0))
 
     p_home = p_home_from_distances(features["d_home"], features["d_away"])
+    if fast_ball:
+        p_home[np.nan_to_num(features["ball_speed"], nan=0.0) > FAST_BALL_MS] = 0.5
     if team_prior is not None:
         p_home = _prob(_odds(_clip(p_home)) * team_prior)
     return combine(p_alive, p_home)

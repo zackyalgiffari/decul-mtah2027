@@ -17,6 +17,11 @@ its own (--stage; the default is the full pipeline):
     v2  team evidence from metres to the nearest home and away player         (solution/features.py)
     v3  + dead-ball evidence: ball over the line, players walking, ball still (solution/evidence.py)
     v4  + Smart Tagging as a prior on which team has the ball                 (solution/tagging.py)
+    v5  + no team evidence while the ball is travelling fast (passes, shots)
+    v6  + a ball standing on a line or the centre spot is waiting for a restart
+
+The default stays at the last stage whose gain held up across the scorer's diagnostics, not the
+newest one (docs/ROADMAP.md, M7).
 """
 
 import argparse
@@ -35,7 +40,7 @@ from solution.decode import decode_match  # noqa: E402
 # Params
 TEAM = "Decul"
 RESULTS_DIR = os.path.join(ROOT, "evaluation", "results")
-STAGES = ("v0", "v1", "v2", "v3", "v4")
+STAGES = ("v0", "v1", "v2", "v3", "v4", "v5", "v6")
 DEFAULT_STAGE = "v4"
 WINDOW = 50  # v0: half-width of the baseline's majority vote, in frames; 50 is the published floor
 
@@ -49,8 +54,13 @@ def labels_for(stage, game=GAME):
 
     track = atd.load(game)
     feats = features.compute(track, GAMES[game]["pitch"], GAMES[game]["fps"])
-    prior = tagging.team_prior(len(track["ball"]), game) if stage == "v4" else None
-    log_emit = evidence.from_features(feats, dead_ball=stage in ("v3", "v4"), team_prior=prior)
+    level = STAGES.index(stage)
+    prior = tagging.team_prior(len(track["ball"]), game) if level >= STAGES.index("v4") else None
+    log_emit = evidence.from_features(feats,
+                                      dead_ball=level >= STAGES.index("v3"),
+                                      team_prior=prior,
+                                      fast_ball=level >= STAGES.index("v5"),
+                                      restart=level >= STAGES.index("v6"))
     return decode_match(log_emit, game)
 
 
