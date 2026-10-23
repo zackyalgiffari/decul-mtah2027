@@ -1,3 +1,19 @@
+# Team Decul — More than a Hack 2027
+
+Team Decul's entry to Phase 1. The organisers' starter kit is kept unchanged below; our code is
+`make_submission.py` and `solution/`, and our technical document is [docs/Decul.md](docs/Decul.md).
+
+```bash
+pip install -r requirements.txt
+export MTAH_DATA_DIR=/path/to/mtah2027      # or unpack the data bundle into ./data
+python make_submission.py                   # -> evaluation/results/Decul.csv
+python evaluation/validate_submission.py evaluation/results/Decul.csv
+```
+
+The match data is not in this repository and must never be committed (see [RULES.md](RULES.md)).
+
+---
+
 # More than a Hack 2027 — Phase 1: Ball Possession
 
 **Organised by [Metrica Sports](https://metrica-sports.com), [FC Barcelona](https://www.fcbarcelona.com)
