@@ -38,6 +38,33 @@ The pipeline is built in stages so each layer's contribution is measured on its 
 | v5 *(tried, dropped)* | no team evidence while the ball travels faster than 7 m/s (a pass or shot passing a player) |
 | v6 *(tried, dropped)* | a ball standing still on a line or the centre spot counts towards a stoppage (restart waiting) |
 
+**Validation on two public matches.** Five public minutes cannot separate stages, so we also
+scored them on Metrica's public sample matches (Sample Game 1 and 2), whose event logs give a
+possession label for every frame — about 330 possessions per match. The labels are derived
+mechanically from the events (`validation/metrica_public.py` documents the rule), which is not
+the competition's tracking-based definition, and the sample tracking is cleaner; the numbers
+compare stages with each other and do not predict the competition score. Smart Tagging is not
+available there, so v4 and v6 cannot be run. spellF1 with 5–95% bootstrap interval:
+
+| stage | Sample Game 1 (328 possessions) | Sample Game 2 (330 possessions) |
+|---|---|---|
+| v0 baseline | 0.399 [0.367, 0.433] | 0.397 [0.366, 0.429] |
+| v1 Viterbi | 0.472 [0.437, 0.510] | 0.476 [0.441, 0.514] |
+| v2 distances | 0.527 [0.489, 0.567] | 0.534 [0.494, 0.575] |
+| v3 dead ball | 0.511 [0.473, 0.550] | 0.533 [0.492, 0.573] |
+| v5 fast ball | 0.520 [0.468, 0.571] | 0.542 [0.492, 0.591] |
+
+- The decoder and the distance evidence are a real gain: v2 beats the baseline on both matches
+  with non-overlapping intervals (+0.13 spellF1).
+- v3 does not change spellF1 there but raises dead-ball recall on Game 1 (0.75 → 0.80) and
+  alive/dead F1, as it did on the competition's public window; it is kept.
+- v5 is level on spellF1 but predicts far too few possessions (216 vs 328, 198 vs 330) and lost
+  boundary timing on the competition data, so it stays dropped.
+- The priors are not fragile: expected possession length 6, 12 or 24 s gives the same result
+  within noise, while doubling TEMPER to 0.6 is clearly worse on both matches and halving it to
+  0.15 halves the number of predicted possessions. The submitted values (12 s, 0.3) sit in the
+  stable region and were not changed.
+
 **Submitted: v4.** v5 removed spurious possessions (public window 21 → 19, full match 366 → 316)
 but matched fewer changes of possession in time (7 → 4 of 20 within 1 s): an interception
 happens exactly when a fast ball is cut out, so ignoring fast balls removed the evidence at the
@@ -99,8 +126,10 @@ _Draft._
   (v4, public window: 996 of 1,469 dead-ball frames predicted H or A; every frame predicted D was
   correct). A ball placed for a throw-in or corner looks like a ball at a player's feet. Stage
   v6 adds a restart cue for exactly this case.
-- **Validation.** The only labelled data is five minutes with 17 possessions, so stage choices
-  rest on consistent movement across all diagnostics plus football priors, not on one score.
+- **Validation.** The competition's labelled data is five minutes with 17 possessions. The
+  larger check on two public Metrica matches uses event-derived labels and cleaner tracking, so
+  it supports the ranking of stages but not their absolute scores; and it cannot test v4, whose
+  Smart Tagging prior rests on the public window and consistent diagnostics alone.
 - **Hand-set priors.** Durations, distances and odds are set from football knowledge, not
   learned; a model trained on labelled matches could set them better.
 - **No video.** The ball is missing on 41% of graded frames and we do not re-detect it; that is
@@ -113,4 +142,17 @@ uv venv --python 3.11 && uv pip sync requirements-lock.txt   # or: pip install -
 export MTAH_DATA_DIR=/path/to/mtah2027
 python make_submission.py            # -> evaluation/results/Decul.csv
 python evaluation/validate_submission.py evaluation/results/Decul.csv
+```
+
+Validation table in §1 (public data only):
+
+```bash
+for g in 1 2; do
+  d=~/mtah-public/metrica_sample/Sample_Game_$g; mkdir -p $d
+  for f in RawEventsData RawTrackingData_Home_Team RawTrackingData_Away_Team; do
+    curl -sSfL -o $d/Sample_Game_${g}_$f.csv \
+      https://raw.githubusercontent.com/metrica-sports/sample-data/master/data/Sample_Game_$g/Sample_Game_${g}_$f.csv
+  done
+  python validation/metrica_public.py $d
+done
 ```

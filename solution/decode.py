@@ -35,13 +35,18 @@ DEAD_S = 15.0
 TURNOVER_SHARE = 0.75
 
 
-def transition_log_matrix(fps):
-    """3x3 log transition matrix, rows = from-state, columns = to-state, in H A D order."""
-    end_possession = 1.0 / (POSSESSION_S * fps)
-    end_stoppage = 1.0 / (DEAD_S * fps)
+def transition_log_matrix(fps, possession_s=POSSESSION_S, dead_s=DEAD_S,
+                          turnover_share=TURNOVER_SHARE):
+    """3x3 log transition matrix, rows = from-state, columns = to-state, in H A D order.
+
+    The keyword arguments exist for validation/metrica_public.py's sensitivity check; the
+    submission always uses the module defaults.
+    """
+    end_possession = 1.0 / (possession_s * fps)
+    end_stoppage = 1.0 / (dead_s * fps)
     trans = np.array([
-        [1.0 - end_possession, end_possession * TURNOVER_SHARE, end_possession * (1 - TURNOVER_SHARE)],
-        [end_possession * TURNOVER_SHARE, 1.0 - end_possession, end_possession * (1 - TURNOVER_SHARE)],
+        [1.0 - end_possession, end_possession * turnover_share, end_possession * (1 - turnover_share)],
+        [end_possession * turnover_share, 1.0 - end_possession, end_possession * (1 - turnover_share)],
         [end_stoppage / 2.0, end_stoppage / 2.0, 1.0 - end_stoppage],
     ])
     return np.log(trans)
@@ -71,12 +76,21 @@ def viterbi(log_emit, log_trans, log_init=None):
     return path
 
 
-def decode_match(log_emit, game=GAME, log_trans=None):
-    """Labels for every video frame: Viterbi inside each half, X everywhere else."""
+def decode_blocks(log_emit, blocks, fps, log_trans=None):
+    """Labels for every frame: Viterbi inside each (first, last) block, inclusive, X elsewhere.
+
+    Blocks are decoded independently, so nothing carries across a break in play such as halftime.
+    """
     if log_trans is None:
-        log_trans = transition_log_matrix(GAMES[game]["fps"])
+        log_trans = transition_log_matrix(fps)
     labels = np.full(len(log_emit), "X", dtype="<U1")
-    for _, first, last in half_video_blocks(game):
-        block = slice(first, last + 1)   # half_video_blocks is inclusive at both ends
+    for first, last in blocks:
+        block = slice(first, last + 1)
         labels[block] = STATES[viterbi(log_emit[block], log_trans)]
     return labels
+
+
+def decode_match(log_emit, game=GAME, log_trans=None):
+    """Labels for every video frame of a competition match: one block per half."""
+    blocks = [(first, last) for _, first, last in half_video_blocks(game)]
+    return decode_blocks(log_emit, blocks, GAMES[game]["fps"], log_trans)

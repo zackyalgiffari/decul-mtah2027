@@ -174,9 +174,28 @@ Ingat: tag `N/A` (semua throw-in) dan interval fase ≠ possession.
 - **Keputusan: v4 tetap default.** Keduanya dipertahankan di kode sebagai ablation untuk dokumen
   teknis.
 
-**M7b, validasi di pertandingan publik Metrica (🔄):** label H/A/D diturunkan dari event data
-Sample Game 1 dan 2 (ratusan possession), untuk menguji pilihan tahap dan prior secara jujur.
-Kode di `validation/metrica_public.py`.
+**M7b, validasi di pertandingan publik Metrica ✅:** label H/A/D diturunkan dari event data
+Sample Game 1 dan 2 (328 dan 330 possession). Kode di `validation/metrica_public.py`.
+
+| tahap | Game 1 spellF1 [5–95%] | Game 2 spellF1 [5–95%] |
+|---|---|---|
+| v0 baseline | 0.399 [0.367, 0.433] | 0.397 [0.366, 0.429] |
+| v1 Viterbi | 0.472 [0.437, 0.510] | 0.476 [0.441, 0.514] |
+| v2 jarak | 0.527 [0.489, 0.567] | 0.534 [0.494, 0.575] |
+| v3 dead-ball | 0.511 [0.473, 0.550] | 0.533 [0.492, 0.573] |
+| v5 bola cepat | 0.520 [0.468, 0.571] | 0.542 [0.492, 0.591] |
+
+- **Hasil pertama yang signifikan:** v2 mengalahkan baseline di kedua pertandingan, dengan
+  interval yang tidak tumpang tindih (+0,13 spellF1).
+- v3 setara di spellF1, tapi menaikkan recall `D` dan alive/dead F1, jadi tetap dipakai. v5
+  memprediksi terlalu sedikit possession, jadi tetap dibuang.
+- **Prior stabil:** durasi possession 6, 12, atau 24 s hasilnya sama. TEMPER 0.6 jelas lebih
+  buruk, dan 0.15 memotong jumlah possession separuh. Nilai yang dipakai (12 s, 0.3) tidak
+  diubah, jadi tidak perlu run ulang di data resmi.
+- **Batas:** label dari event ≠ definisi kompetisi, dan tracking sampel lebih bersih. v4 (Smart
+  Tagging) tidak bisa diuji di sini.
+
+**Keputusan M7: v4 dibekukan.** Berikutnya M8 (paket dan submit).
 
 **Tujuan:** memastikan perbaikan itu nyata, bukan kebetulan dari 17 possession.
 **Cek:** `--bootstrap 1000`; jumlah dan durasi possession masuk akal untuk dua babak; kedua babak

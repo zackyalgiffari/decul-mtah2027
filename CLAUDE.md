@@ -48,6 +48,7 @@ not enabled yet. Hook tests: `python3 .claude/hooks/test_guard_data.py`.
 | `make_submission.py` | the one command that writes `evaluation/results/Decul.csv`; `--stage v0..v4` (default v4) |
 | `solution/` | the Decul pipeline: `decode.py` (Viterbi), `evidence.py`, `features.py`, `atd.py` (parser + cache in `data/cache/`), `tagging.py` |
 | `requirements-lock.txt` | pinned versions the submission is produced with |
+| `validation/metrica_public.py` | stage and prior validation on Metrica's public sample matches (cited in `docs/Decul.md`); data downloaded to `~/mtah-public/`, outside the repo |
 | `docs/Decul.md` | the technical document (submitted as `Decul.md`) |
 | `README.md` (top section only) | install and run instructions |
 | `CLAUDE.md`, `docs/ROADMAP.md`, `.claude/` | how the work was organised, and the data guard |
