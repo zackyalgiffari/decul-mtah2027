@@ -19,6 +19,7 @@ its own (--stage; the default is the full pipeline):
     v4  + Smart Tagging as a prior on which team has the ball                 (solution/tagging.py)
     v5  + no team evidence while the ball is travelling fast (passes, shots)
     v6  + a ball standing on a line or the centre spot is waiting for a restart
+    v7  v4 with the alive/dead evidence learned from the match itself (EM)    (solution/adapt.py)
 
 The default stays at the last stage whose gain held up across the scorer's diagnostics, not the
 newest one (docs/ROADMAP.md, M7).
@@ -32,15 +33,25 @@ import numpy as np
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, ROOT)
-from games import GAME, GAMES  # noqa: E402
+from games import GAME, GAMES, half_video_blocks  # noqa: E402
 from starter.baseline import AWAY, HOME, LABELS, build, smooth, write_submission  # noqa: E402
-from solution import atd, evidence, features, tagging  # noqa: E402
+from solution import adapt, atd, evidence, features, tagging  # noqa: E402
 from solution.decode import decode_match  # noqa: E402
 
 # Params
 TEAM = "Decul"
 RESULTS_DIR = os.path.join(ROOT, "evaluation", "results")
-STAGES = ("v0", "v1", "v2", "v3", "v4", "v5", "v6")
+STAGES = ("v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7")
+# What each feature-based stage switches on. v5 and v6 were tried on top of v4 and dropped; v7
+# builds on v4 again, not on them.
+STAGE_FLAGS = {
+    "v2": {},
+    "v3": {"dead_ball": True},
+    "v4": {"dead_ball": True, "tagging": True},
+    "v5": {"dead_ball": True, "tagging": True, "fast_ball": True},
+    "v6": {"dead_ball": True, "tagging": True, "fast_ball": True, "restart": True},
+    "v7": {"tagging": True, "adapt": True},
+}
 DEFAULT_STAGE = "v4"
 WINDOW = 50  # v0: half-width of the baseline's majority vote, in frames; 50 is the published floor
 
@@ -52,15 +63,20 @@ def labels_for(stage, game=GAME, use_cache=True):
     if stage == "v1":
         return decode_match(evidence.from_labels(build(game), home=HOME, away=AWAY), game)
 
+    flags = STAGE_FLAGS[stage]
     track = atd.load(game, use_cache=use_cache)
-    feats = features.compute(track, GAMES[game]["pitch"], GAMES[game]["fps"])
-    level = STAGES.index(stage)
-    prior = tagging.team_prior(len(track["ball"]), game) if level >= STAGES.index("v4") else None
-    log_emit = evidence.from_features(feats,
-                                      dead_ball=level >= STAGES.index("v3"),
-                                      team_prior=prior,
-                                      fast_ball=level >= STAGES.index("v5"),
-                                      restart=level >= STAGES.index("v6"))
+    fps = GAMES[game]["fps"]
+    feats = features.compute(track, GAMES[game]["pitch"], fps)
+    prior = tagging.team_prior(len(track["ball"]), game) if flags.get("tagging") else None
+    if flags.get("adapt"):
+        blocks = [(first, last) for _, first, last in half_video_blocks(game)]
+        log_emit = adapt.from_features(feats, blocks, fps, team_prior=prior)
+    else:
+        log_emit = evidence.from_features(feats,
+                                          dead_ball=flags.get("dead_ball", False),
+                                          team_prior=prior,
+                                          fast_ball=flags.get("fast_ball", False),
+                                          restart=flags.get("restart", False))
     return decode_match(log_emit, game)
 
 

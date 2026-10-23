@@ -90,14 +90,23 @@ def _prob(odds):
     return odds / (1.0 + odds)
 
 
+def combine_logs(log_alive, log_dead, p_home):
+    """(n, 3) tempered log-likelihoods from per-frame log evidence for alive / dead and P(home | alive).
+
+    solution/adapt.py (v7) passes learned log-probabilities here; combine() passes log P(alive).
+    """
+    p_home = _clip(p_home)
+    out = np.empty((len(p_home), 3))
+    out[:, H] = log_alive + np.log(p_home)
+    out[:, A] = log_alive + np.log(1.0 - p_home)
+    out[:, D] = log_dead + np.log(0.5)
+    return TEMPER * out
+
+
 def combine(p_alive, p_home):
     """(n, 3) tempered log-likelihoods from P(alive) and P(home | alive)."""
-    p_alive, p_home = _clip(p_alive), _clip(p_home)
-    out = np.empty((len(p_alive), 3))
-    out[:, H] = np.log(p_alive) + np.log(p_home)
-    out[:, A] = np.log(p_alive) + np.log(1.0 - p_home)
-    out[:, D] = np.log(1.0 - p_alive) + np.log(0.5)
-    return TEMPER * out
+    p_alive = _clip(p_alive)
+    return combine_logs(np.log(p_alive), np.log(1.0 - p_alive), p_home)
 
 
 def from_labels(codes, home=0, away=1):
@@ -141,10 +150,14 @@ def from_features(features, dead_ball=False, team_prior=None, fast_ball=False, r
         p_alive = _prob(_odds(p_alive) * alive_odds_dead_ball(features))
     if restart:
         p_alive = _prob(_odds(p_alive) * np.where(features["restart_spot"], RESTART_ODDS, 1.0))
+    return combine(p_alive, team_probability(features, team_prior, fast_ball))
 
+
+def team_probability(features, team_prior=None, fast_ball=False):
+    """P(home | alive) per frame: distances, optionally the v5 fast-ball rule and the v4 tag prior."""
     p_home = p_home_from_distances(features["d_home"], features["d_away"])
     if fast_ball:
         p_home[np.nan_to_num(features["ball_speed"], nan=0.0) > FAST_BALL_MS] = 0.5
     if team_prior is not None:
         p_home = _prob(_odds(_clip(p_home)) * team_prior)
-    return combine(p_alive, p_home)
+    return p_home

@@ -34,7 +34,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "evaluation"))
 import possession_metrics as pm  # noqa: E402
-from solution import evidence, features  # noqa: E402
+from solution import adapt, evidence, features  # noqa: E402
 from solution.decode import decode_blocks, transition_log_matrix  # noqa: E402
 from starter.baseline import smooth  # noqa: E402
 
@@ -137,6 +137,8 @@ def stage_labels(track, blocks, stage, feats, log_trans=None, temper=evidence.TE
         return labels
     if stage == "v1":
         emit = evidence.from_labels(codes)
+    elif stage == "v7":   # v3 + alive/dead learned by EM (no Smart Tagging here)
+        emit = adapt.from_features(feats, blocks, FPS)
     else:
         emit = evidence.from_features(feats, dead_ball=stage in ("v3", "v5"), fast_ball=stage == "v5")
     emit = emit * (temper / evidence.TEMPER)   # evidence is linear in TEMPER
@@ -174,7 +176,7 @@ def main():
     feats = features.compute(track, PITCH, FPS)
     header = "{:<22} macroF1  spellF1 [5-95%]          pred/gt  trans  a/d    team   Drec"
     print("\n" + header.format("stage"))
-    for stage in ("v0", "v1", "v2", "v3", "v5"):
+    for stage in ("v0", "v1", "v2", "v3", "v5", "v7"):
         labels = stage_labels(track, blocks, stage, feats)
         print("{:<22} {}".format(stage, summarise(pm.evaluate(gt, pm.label_codes(labels),
                                                                bootstrap_n=BOOTSTRAP_N))))
