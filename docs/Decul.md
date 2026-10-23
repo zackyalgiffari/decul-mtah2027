@@ -44,6 +44,7 @@ The pipeline was built in stages so each layer's contribution could be measured 
 | v5 | no team evidence while the ball travels faster than 7 m/s | tried, dropped |
 | v6 | a ball standing still on a line or the centre spot counts towards a stoppage | tried, dropped |
 | v7 | v4 with the alive/dead evidence learned from the match itself by EM (`solution/adapt.py`) | tried, dropped |
+| v8 | v4 + Smart Tagging restarts (set pieces, goal → kick-off) as dead-ball evidence | tried, dropped |
 
 Parameters are football priors written in each module's `# Params` block. None was searched on
 the public five minutes, which hold too few possessions to choose between versions.
@@ -63,6 +64,7 @@ cannot rank stages whose intervals overlap.
 | v5 | 0.6754 | 0.4000 [0.244, 0.556] | 19 | 0.924 |
 | v6 | 0.6754 | 0.4000 [0.244, 0.556] | 19 | 0.924 |
 | v7 | 0.6593 | 0.3800 [0.240, 0.520] | 23 | 0.911 |
+| v8 | 0.6868 | 0.3784 [0.227, 0.541] | 20 | 0.909 |
 
 Over the full match the number of predicted possessions falls from 669 (v0) to 366 (v4), with
 mean duration rising from 7.6 s to 10.5 s; dead ball covers 39% of graded frames, in line with
@@ -97,7 +99,7 @@ score. Smart Tagging is not available there, so v4 and v6 cannot be run. spellF1
   it to 0.15 halves the number of predicted possessions. The submitted values sit in the stable
   region and were not changed.
 
-### Why v4, and why v5, v6 and v7 were dropped
+### Why v4, and why v5–v8 were dropped
 
 v4 is the stage every diagnostic favours on the competition data: best spellF1 and macroF1,
 possession count closest to the truth among the stages that keep transition timing, best
@@ -117,14 +119,22 @@ the competition's public window dead-ball recall did not move (0.322 → 0.323),
 precision fell from 1.00 to 0.75 and spellF1 from 0.4316 to 0.3800. The missed stoppages look
 like live play in every tracking feature we have — an information limit, not a tuning one.
 
-v5, v6 and v7 remain in the code as ablations (`--stage`).
+v8 therefore brought new information: every Smart Tagging set piece is a restart, so play is
+dead shortly before it, and a goal is followed by a dead stretch until the kick-off. Dead-ball
+recall rose from 0.32 to 0.46, but precision fell from 1.00 to 0.66 — 347 live frames on the
+public window became dead ball — team accuracy fell from 0.845 to 0.787, spellF1 from 0.4316 to
+0.3784, and the full-match dead-ball share rose to 45%. The tags locate restarts only to within
+a few seconds, too coarsely to place dead-ball boundaries frame by frame. Moving or weakening
+the window would have meant fitting four public stoppages, so v8 was dropped as built.
+
+v5–v8 remain in the code as ablations (`--stage`).
 
 ## 2. Assets used and dropped
 
 | asset | used? | how / why not |
 |---|---|---|
 | Tactical ATD (tracking) | yes | ball and player positions and speeds, every frame |
-| Smart Tagging | yes (v4) | team of possession-implying phases as a prior; `N/A` tags ignored |
+| Smart Tagging | yes (v4) | team of possession-implying phases as a prior; `N/A` tags ignored. Restart timing as dead-ball evidence tried (v8) and dropped: too coarse in time |
 | Homography | no | only needed to go between pitch and video, and we do not use the video |
 | Tactical video | no | the tracking already encodes it; ball detection from video left as future work |
 | Broadcast video, ATD, homography | no | not synchronised to the tactical timeline; adds alignment risk |
@@ -155,7 +165,9 @@ v5, v6 and v7 remain in the code as ablations (`--stage`).
   correct). A ball placed for a throw-in or a free kick looks like a ball at a player's feet. A
   restart cue for balls standing on a line (v6) did not fire often enough to help, and learning
   the dead-ball evidence from the match (v7) did not separate them either: the tracking alone
-  does not carry the information.
+  does not carry the information. Smart Tagging restarts (v8) carry some of it, but too
+  coarsely in time — they found more stoppages while cutting into live play. Detecting the ball
+  and the restart from video is the remaining route.
 - **Validation.** The competition's labelled data is five minutes with 17 possessions. The larger
   check on two public Metrica matches uses event-derived labels and cleaner tracking, so it
   supports the ranking of stages but not their absolute scores, and it cannot test v4, whose

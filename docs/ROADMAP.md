@@ -212,6 +212,25 @@ dead ball yang terlewat **tidak bisa dibedakan dari permainan hidup dengan fitur
 pun yang kita punya**. Ini batas informasi, bukan masalah penyetelan. Langkah berikutnya butuh
 sumber informasi baru: **v8**, waktu restart dari Smart Tagging.
 
+**M7d, v8: waktu restart dari Smart Tagging, dicoba lalu dibuang (run kelima, 23 Okt):**
+
+| syarat | v4 | v8 | |
+|---|---|---|---|
+| recall D > 0.45 | 0.322 | 0.459 | ✅ tipis |
+| presisi D ≥ 0.9 | 1.00 | 0.66 | ❌ |
+| possession publik ≤ 21 | 21 | 20 | ✅ |
+| alive/dead F1 naik | 0.924 | 0.909 | ❌ |
+| spellF1 turun ≤ 0.04 | 0.4316 | 0.3784 | ❌ |
+| porsi D seluruh match 35–45% | 39% | 45.4% | ❌ |
+
+v8 menangkap 201 frame D tambahan, tapi 347 frame permainan hidup ikut berubah menjadi D. Waktu
+tag Smart Tagging terlalu kasar untuk menandai batas dead ball per frame. Menyetel ulang
+jendelanya berarti tuning ke 4 stoppage publik, jadi tidak dilakukan.
+
+**Kesimpulan v5–v8:** dengan aset yang dipakai (tracking + Smart Tagging), v4 sudah dekat batas
+yang bisa dicapai tanpa video. **v4 final**, kecuali kamu memulai eksperimen baru. Sebelum
+submit, jalankan `final_checks.sh` di branch `main`.
+
 **Tujuan:** memastikan perbaikan itu nyata, bukan kebetulan dari 17 possession.
 **Cek:** `--bootstrap 1000`; jumlah dan durasi possession masuk akal untuk dua babak; kedua babak
 berperilaku mirip; pilih versi yang lebih sederhana kalau dua versi tidak bisa dibedakan.
