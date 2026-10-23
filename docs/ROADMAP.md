@@ -146,6 +146,15 @@ berperilaku mirip; pilih versi yang lebih sederhana kalau dua versi tidak bisa d
 > riwayat git dengan peta file di CLAUDE.md, lengkapi docs/Decul.md dari catatan di roadmap, dan
 > beri saya perintah untuk tes determinisme yang akan saya jalankan sendiri.
 
+## M9 — Setelah kompetisi selesai ⬜
+
+Wajib menurut syarat dan ketentuan yang disetujui saat pendaftaran, juga kalau tim berhenti
+setelah tahap ini.
+- [ ] Hapus `data/` (termasuk `data/cache/`) dan `~/mtah-data` kalau dipakai
+- [ ] Hapus output turunan data di `experiments/` dan `evaluation/results/[Dd]ecul*.csv`
+- [ ] Hapus salinan di tempat lain (cloud, laptop anggota tim)
+- [ ] Yang boleh disimpan: kode, dokumentasi, dan deliverable yang tidak memuat data
+
 ---
 
 ## Jadwal

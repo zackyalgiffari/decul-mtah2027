@@ -68,3 +68,8 @@ env/
 # computed from the match data -- can reach the public history. See CLAUDE.md, "Where new code goes".
 experiments/*
 !experiments/README.md
+
+# Local Claude Code notes and settings: CLAUDE.local.md summarises the competition terms, which are
+# shared with participants only. Project-wide rules live in CLAUDE.md and .claude/settings.json.
+CLAUDE.local.md
+.claude/settings.local.json

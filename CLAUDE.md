@@ -6,16 +6,38 @@ Deadline **2026-11-17**. The plan, milestone by milestone, is [docs/ROADMAP.md](
 ## Hard rules
 
 - **Never read, open, print or summarise anything under `data/` or `$MTAH_DATA_DIR`**
-  (`~/mtah-data`). The terms forbid giving the match data, or any extract of it, to a hosted LLM
-  (OVERVIEW.md, "Use of Large Language Models"). `.claude/settings.json` denies `Read` there; do
-  not work around it with shell commands. The user runs anything that touches the data and shares
-  only the output of `evaluation/run_evaluation.py` and `evaluation/validate_submission.py`.
+  (`~/mtah-data`), nor output computed from it. The terms accepted at enrolment forbid giving the
+  match data, any extract of it, or any confidential information from the organisers to a hosted
+  LLM without their written authorisation (also OVERVIEW.md, "Use of Large Language Models").
+  The user runs anything that touches the data and shares only the output of
+  `evaluation/run_evaluation.py` and `evaluation/validate_submission.py`.
+- **When a call is blocked by the data guard, stop and ask the user.** Never rephrase, split or
+  wrap a command to get past it, and never edit `.claude/` unless the user asks for that change.
 - **Never commit the data or anything derived from it frame by frame** (feature tables, tracking
   exports, plots of it). The repository becomes public, history included.
+- **Write outputs computed from the data under `data/`** (e.g. `data/cache/`), never elsewhere,
+  so they stay gitignored and guarded. All of it is deleted when the competition ends.
 - **Deterministic code only.** `make_submission.py` must regenerate `Decul.csv` byte-identically:
   no unseeded randomness, no network, no hosted model at inference time.
 - **Do not tune on the public 5 minutes.** 17 possessions cannot rank two versions (EVALUATION.md).
   Use it to check correctness; use `--bootstrap 1000` before claiming one version beats another.
+
+## Enforcement
+
+The rules above are enforced in this project's `.claude/settings.json` only (project scope; no
+user-level setting is involved):
+
+| layer | blocks |
+|---|---|
+| `permissions.deny` | Read and Edit of `data/**` and `~/mtah-data/**` |
+| `permissions.ask` | any edit under `.claude/` needs the user's approval |
+| `.claude/hooks/guard_data.py` (PreToolUse, fail-closed) | file tools on the data or on outputs computed from it (`evaluation/results/[Dd]ecul*.csv`, data-like files in `experiments/`); shell commands that name the data, list it, run code that reads it (`make_submission.py`, `starter/baseline.py`, the loaders, notebooks), or search recursively into it |
+
+The hook reads command text only: a new script that opens the data without naming it is not
+caught. That gap is closed only by the Bash sandbox (`sandbox.enabled`, needs `socat`), which is
+not enabled yet. Hook tests: `python3 .claude/hooks/test_guard_data.py`.
+
+"Respect .gitignore" in `/config` is not a protection: it only filters the `@` file picker.
 
 ## File map
 
@@ -28,7 +50,7 @@ Deadline **2026-11-17**. The plan, milestone by milestone, is [docs/ROADMAP.md](
 | `requirements-lock.txt` | pinned versions the submission is produced with |
 | `docs/Decul.md` | the technical document (submitted as `Decul.md`) |
 | `README.md` (top section only) | install and run instructions |
-| `CLAUDE.md`, `docs/ROADMAP.md`, `.claude/settings.json` | how the work was organised |
+| `CLAUDE.md`, `docs/ROADMAP.md`, `.claude/` | how the work was organised, and the data guard |
 
 **2. Organiser infrastructure we depend on — read-only.** Do not modify: it keeps
 `git pull upstream main` conflict-free and the scorer identical to the official one.
