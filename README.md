@@ -2,6 +2,7 @@
 
 Team Decul's entry to Phase 1. The organisers' starter kit is kept unchanged below; our code is
 `make_submission.py` and `solution/`, and our technical document is [docs/Decul.md](docs/Decul.md).
+How the work is planned: [docs/ROADMAP.md](docs/ROADMAP.md); which files matter: [CLAUDE.md](CLAUDE.md).
 
 ```bash
 uv venv --python 3.11 && uv pip sync requirements-lock.txt   # or: pip install -r requirements-lock.txt

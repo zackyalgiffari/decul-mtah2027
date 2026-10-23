@@ -62,3 +62,9 @@ __pycache__/
 venv/
 env/
 .DS_Store
+
+# -- Team Decul ---------------------------------------------------------------------------------
+# experiments/ is scratch: never presented, never committed, so nothing exploratory -- and nothing
+# computed from the match data -- can reach the public history. See CLAUDE.md, "Where new code goes".
+experiments/*
+!experiments/README.md
