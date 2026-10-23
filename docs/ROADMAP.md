@@ -44,7 +44,30 @@ Ini contoh gaya pelabelan, **bukan** angka untuk tuning.
 
 ---
 
-## M2 — v1: Viterbi di atas sinyal baseline ⬜ (tidak perlu data)
+## Status 23 Okt: kode M2–M6 siap, menunggu skor dari data resmi
+
+Semua tahap ada di `make_submission.py --stage v0..v4`. **Langkah berikutnya untukmu**, di
+terminal sendiri (Claude Code diblokir dari perintah ini):
+```bash
+bash experiments/run_all.sh
+```
+Script ini menjalankan v0–v4, memvalidasi tiap file, lalu men-skor semuanya. Seluruh outputnya
+aman ditempel. Error tidak dicetak, tapi disimpan di `data/cache/run_all.log`. Baca sendiri dan
+ceritakan error-nya tanpa menempel isi data.
+
+> **Prompt:**
+> Ini output `bash experiments/run_all.sh`: <tempel output>. Cek M3 (decul_v0 = smooth50), lalu
+> bandingkan v1–v4 dengan bootstrap dan sarankan apa yang dikerjakan untuk M7.
+
+---
+
+## M2 — v1: Viterbi di atas sinyal baseline ✅
+
+**Hasil (window publik, 23 Okt):** `decul_v1_public` macroF1 **0.6362**, spellF1 **0.3304**,
+transF1 **0.3462**, dibandingkan `baseline_smooth50` 0.6207 / 0.3256 / 0.0816. Sinyalnya sama,
+hanya decoder yang diganti. `spellF1` setara: dengan 17 possession, scorer menyatakan selisih di
+bawah ~0.33 masih noise. macroF1 dan ketepatan waktu transisi lebih baik. Parameter
+tidak di-tune ke window publik. Tes sintetis: `experiments/test_decode.py` (16/16).
 
 **Tujuan:** mengganti majority vote dengan decoding Viterbi 3-state (H, A, D) yang memberi biaya
 pada setiap pergantian state, dijalankan per babak.
@@ -61,7 +84,7 @@ deterministik.
 > skor di window publik dengan bootstrap, lalu jelaskan hasilnya dibandingkan baseline_smooth50.
 > Jangan memilih biaya pergantian dengan mencari skor tertinggi di window publik.
 
-## M3 — Data datang: reproduksi baseline ⏸
+## M3 — Data datang: reproduksi baseline 🔄 (data sudah ada; `--stage v0` di `run_all.sh`)
 
 **Tujuan:** memastikan data, alignment, dan environment benar di mesinmu.
 **Kamu jalankan sendiri** (di terminal, bukan lewat AI):
@@ -79,7 +102,10 @@ python evaluation/run_evaluation.py
 > run_evaluation.py dan validate_submission.py: <tempel output>. Apakah Decul sudah identik dengan
 > baseline_smooth50? Kalau belum, apa yang harus saya cek?
 
-## M4 — Fitur dan bukti per frame dari ATD ⬜
+## M4 — Fitur dan bukti per frame dari ATD 🔄 (kode siap: `--stage v2`)
+
+Parser dan fitur sudah dites di sampel publik Metrica (`experiments/check_metrica_sample.py`):
+144 ribu frame diparse dalam 2,9 s, termasuk format tanpa kolom kecepatan.
 
 **Tujuan:** mengganti label pemain terdekat yang keras dengan bukti bertingkat: jarak pemain H dan
 A terdekat ke bola, bola terlihat atau tidak, kecepatan bola, interpolasi bola untuk celah pendek.
@@ -93,7 +119,7 @@ sampel publik Metrica (github.com/metrica-sports/sample-data).
 > `starter/baseline.py`, lalu sambungkan ke Viterbi dari M2 di `make_submission.py`. Uji dulu di
 > data sampel publik Metrica di `experiments/`. Saya yang akan menjalankannya di data resmi.
 
-## M5 — Detektor dead-ball ⬜
+## M5 — Detektor dead-ball 🔄 (kode siap: `--stage v3`)
 
 **Tujuan:** membuat state `D` berarti "permainan berhenti", bukan sekadar "bola hilang dari
 tracking". Bukti: bola di luar batas lapangan, semua pemain melambat, bola diam.
@@ -105,7 +131,7 @@ yang tidak tumpang tindih.
 > Kerjakan M5 di docs/ROADMAP.md. Tambahkan bukti dead-ball ke `solution/evidence.py`. Ini output
 > scorer versi M4 saya: <tempel output>. Fokus pada alive/dead F1.
 
-## M6 — Prior dari Smart Tagging ⬜
+## M6 — Prior dari Smart Tagging 🔄 (kode siap: `--stage v4`, default)
 
 **Tujuan:** memakai tag tim dan set piece sebagai bukti tambahan, terutama saat bola lama hilang.
 Ingat: tag `N/A` (semua throw-in) dan interval fase ≠ possession.

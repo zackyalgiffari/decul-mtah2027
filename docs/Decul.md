@@ -7,21 +7,63 @@ Submission file: `Decul.csv`. Repository: https://github.com/zackyalgiffari/decu
 
 ## 1. Approach
 
-_What we built, and why that rather than something else._
+_Draft — results to be filled in from the stage comparison._
+
+The ranking metric scores whole possessions, so the main failure to avoid is flicker: a
+per-frame rule that switches team for a few frames invents possessions and scores near zero even
+when most frames are right. We therefore separate **evidence** (what each frame says) from
+**decoding** (which sequence of possessions best explains all frames), and decode with a
+three-state hidden Markov model (H, A, D), solved exactly by Viterbi, one half at a time.
+
+- **Decoding** (`solution/decode.py`). Every change of state has a price set by football priors —
+  a possession lasts around 12 s, a stoppage around 15 s, and three in four possessions end in an
+  open-play turnover rather than a stoppage. A change happens only when the evidence outweighs
+  the price, so strong sustained evidence switches within a second while missing evidence leaves
+  the state alone. Unlike a fixed smoothing window, this keeps short real possessions and removes
+  short false ones.
+- **Evidence** (`solution/evidence.py`, `solution/features.py`). Per frame, P(ball alive) and
+  P(home | alive), combined into log-likelihoods and tempered, because consecutive frames are not
+  independent witnesses.
+
+The pipeline is built in stages so each layer's contribution is measured on its own
+(`make_submission.py --stage`):
+
+| stage | adds |
+|---|---|
+| v0 | published baseline: nearest player, majority vote ±2 s |
+| v1 | Viterbi instead of the vote, same signal |
+| v2 | team evidence from metres to the nearest home and away player; ball gaps ≤ 0.5 s interpolated |
+| v3 | dead-ball evidence: ball over the line, players walking, ball standing still |
+| v4 | Smart Tagging as a prior on which team has the ball |
+
+Parameters are football priors written in each module's `# Params` block, not values searched on
+the public five minutes, which hold too few possessions to choose between versions.
 
 ## 2. Assets used and dropped
 
 | asset | used? | how / why not |
 |---|---|---|
-| Tactical ATD (tracking) | | |
-| Smart Tagging | | |
-| Homography | | |
-| Tactical video | | |
-| Broadcast video, ATD, homography | | |
+| Tactical ATD (tracking) | yes | ball and player positions and speeds, every frame |
+| Smart Tagging | yes (v4) | team of possession-implying phases as a prior; `N/A` tags ignored |
+| Homography | no | only needed to go between pitch and video, and we do not use the video |
+| Tactical video | no | the tracking already encodes it; ball detection from video left as future work |
+| Broadcast video, ATD, homography | no | not synchronised to the tactical timeline; adds alignment risk |
 
 ## 3. Possession rules implemented
 
-_Where we drew the line on loose balls, challenges, deflections and restarts._
+_Draft._
+
+- **Loose and contested balls** stay with the team that last had possession: when the ball is
+  more than 3 m from every player, or not tracked, the frame carries no team evidence and the
+  decoder keeps the current state.
+- **Control** means being nearest the ball within 3 m, weighted by how much closer the home
+  player is than the away player. A brief touch or a deflection gives evidence for well under a
+  second and does not outweigh the price of a change of possession.
+- **Dead ball** is evidenced by the ball beyond the lines, players walking (mean speed well
+  under the ~2 m/s of live play) and a ball standing still; a ball merely lost by the tracker for
+  a moment is not a stoppage.
+- **Restarts** are not forced: after a stoppage the possessing team is whichever the evidence
+  favours once play resumes.
 
 ## 4. Limitations
 

@@ -45,8 +45,8 @@ not enabled yet. Hook tests: `python3 .claude/hooks/test_guard_data.py`.
 
 | path | role |
 |---|---|
-| `make_submission.py` | the one command that writes `evaluation/results/Decul.csv` |
-| `solution/` | the Decul pipeline: everything `make_submission.py` calls |
+| `make_submission.py` | the one command that writes `evaluation/results/Decul.csv`; `--stage v0..v4` (default v4) |
+| `solution/` | the Decul pipeline: `decode.py` (Viterbi), `evidence.py`, `features.py`, `atd.py` (parser + cache in `data/cache/`), `tagging.py` |
 | `requirements-lock.txt` | pinned versions the submission is produced with |
 | `docs/Decul.md` | the technical document (submitted as `Decul.md`) |
 | `README.md` (top section only) | install and run instructions |
@@ -70,6 +70,9 @@ disagree, the code is right.
 `requirements.txt` and `requirements-starter.txt`.
 
 **5. Scratch — `experiments/`.** Gitignored except its README. Never presented, never committed.
+Local helpers there: `test_decode.py` (synthetic checks), `score_v1_public.py` (v1 on the public
+`baseline_raw.csv`), `check_metrica_sample.py` (public Metrica sample in `~/mtah-public/`), and
+`run_all.sh` — the user's one command for v0–v4 on the real data (blocked for Claude).
 
 ## Where new code goes
 
