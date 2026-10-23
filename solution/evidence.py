@@ -137,19 +137,23 @@ def alive_odds_dead_ball(features):
     return odds
 
 
-def from_features(features, dead_ball=False, team_prior=None, fast_ball=False, restart=False):
-    """v2-v6: log-likelihoods from solution/features.py output.
+def from_features(features, dead_ball=False, team_prior=None, fast_ball=False, restart=False,
+                  alive_prior=None):
+    """v2-v6, v8: log-likelihoods from solution/features.py output.
 
-    dead_ball   add the v3 dead-ball cues to P(alive)
-    team_prior  per-frame odds multiplier on home (v4, from solution/tagging.py), or None
-    fast_ball   v5: no team evidence while the ball travels faster than FAST_BALL_MS
-    restart     v6: a ball waiting on a line or the centre spot counts towards a dead ball
+    dead_ball    add the v3 dead-ball cues to P(alive)
+    team_prior   per-frame odds multiplier on home (v4, from solution/tagging.py), or None
+    fast_ball    v5: no team evidence while the ball travels faster than FAST_BALL_MS
+    restart      v6: a ball waiting on a line or the centre spot counts towards a dead ball
+    alive_prior  v8: per-frame odds multiplier on alive (solution/tagging.py dead_odds), or None
     """
     p_alive = np.where(features["ball_seen"], P_ALIVE_SEEN, P_ALIVE_UNSEEN)
     if dead_ball:
         p_alive = _prob(_odds(p_alive) * alive_odds_dead_ball(features))
     if restart:
         p_alive = _prob(_odds(p_alive) * np.where(features["restart_spot"], RESTART_ODDS, 1.0))
+    if alive_prior is not None:
+        p_alive = _prob(_odds(p_alive) * alive_prior)
     return combine(p_alive, team_probability(features, team_prior, fast_ball))
 
 

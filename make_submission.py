@@ -20,6 +20,7 @@ its own (--stage; the default is the full pipeline):
     v5  + no team evidence while the ball is travelling fast (passes, shots)
     v6  + a ball standing on a line or the centre spot is waiting for a restart
     v7  v4 with the alive/dead evidence learned from the match itself (EM)    (solution/adapt.py)
+    v8  v4 + Smart Tagging restarts (set pieces, goal -> kick-off) as dead-ball evidence
 
 The default stays at the last stage whose gain held up across the scorer's diagnostics, not the
 newest one (docs/ROADMAP.md, M7).
@@ -41,9 +42,9 @@ from solution.decode import decode_match  # noqa: E402
 # Params
 TEAM = "Decul"
 RESULTS_DIR = os.path.join(ROOT, "evaluation", "results")
-STAGES = ("v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7")
+STAGES = ("v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8")
 # What each feature-based stage switches on. v5 and v6 were tried on top of v4 and dropped; v7
-# builds on v4 again, not on them.
+# and v8 build on v4 again, not on them.
 STAGE_FLAGS = {
     "v2": {},
     "v3": {"dead_ball": True},
@@ -51,6 +52,7 @@ STAGE_FLAGS = {
     "v5": {"dead_ball": True, "tagging": True, "fast_ball": True},
     "v6": {"dead_ball": True, "tagging": True, "fast_ball": True, "restart": True},
     "v7": {"tagging": True, "adapt": True},
+    "v8": {"dead_ball": True, "tagging": True, "setpiece": True},
 }
 DEFAULT_STAGE = "v4"
 WINDOW = 50  # v0: half-width of the baseline's majority vote, in frames; 50 is the published floor
@@ -68,6 +70,7 @@ def labels_for(stage, game=GAME, use_cache=True):
     fps = GAMES[game]["fps"]
     feats = features.compute(track, GAMES[game]["pitch"], fps)
     prior = tagging.team_prior(len(track["ball"]), game) if flags.get("tagging") else None
+    restarts = tagging.dead_odds(len(track["ball"]), game) if flags.get("setpiece") else None
     if flags.get("adapt"):
         blocks = [(first, last) for _, first, last in half_video_blocks(game)]
         log_emit = adapt.from_features(feats, blocks, fps, team_prior=prior)
@@ -76,7 +79,8 @@ def labels_for(stage, game=GAME, use_cache=True):
                                           dead_ball=flags.get("dead_ball", False),
                                           team_prior=prior,
                                           fast_ball=flags.get("fast_ball", False),
-                                          restart=flags.get("restart", False))
+                                          restart=flags.get("restart", False),
+                                          alive_prior=restarts)
     return decode_match(log_emit, game)
 
 
