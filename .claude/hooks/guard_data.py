@@ -56,7 +56,8 @@ SEARCH_TOOLS = ("Grep", "Glob")
 # Grep over a folder that contains the data is only allowed with a filter that cannot match it.
 DATA_SUFFIXES = (".txt", ".xml", ".csv", ".mp4", ".npz", ".npy", ".json")
 
-SEGMENT_SPLIT = re.compile(r"&&|\|\||[;|\n]")
+# A shell started on a string runs that string as a command: check it as one too.
+NESTED_SHELL = re.compile(r"""(?:\b(?:ba|z)?sh\s+-\w*c|\beval)\s+(['"])(.*?)\1""", re.S)
 
 # Read-only git commands that print paths, never file contents. The paths are public (DATA.md).
 GIT_PATHS_ONLY = re.compile(r"^git\s+(ls-files|check-ignore|status)\b")
@@ -84,7 +85,8 @@ EXECUTOR = re.compile(
 # ...and code that reads the data internally, so running it prints whatever it prints about it.
 DATA_READERS = re.compile(
     r"make_submission|starter[/.](baseline|load_atd|load_smart_tagging|load_homography)\b"
-    r"|run_all\.sh|\bjupyter\b|nbconvert|papermill|\.ipynb\b|solution[/.](atd|features|tagging)\b"
+    r"|experiments/\S*\.sh|run_all\.sh|final_checks\.sh"   # every experiments/ script is a data runner
+    r"|\bjupyter\b|nbconvert|papermill|\.ipynb\b|solution[/.](atd|features|tagging)\b"
     r"|asset_paths|\brequire\(")
 
 # Recursive readers: grep -r ignores .gitignore and would walk straight into data/.
@@ -152,6 +154,42 @@ def check_search(tool, tool_input, cwd):
             return ("Grep over {} would reach the match data; search a subfolder or add a "
                     "glob/type filter such as '*.py'".format(path))
     return None
+
+
+def split_segments(command):
+    """Split on |, ||, &&, ; and newlines -- but not inside quotes.
+
+    A '|' inside a quoted regex is an alternation, not a pipe; splitting there once made
+    "grep -E '...|make_submission.py$'" look like a command that runs make_submission.py.
+    """
+    segments, current, quote, index = [], [], None, 0
+    while index < len(command):
+        char = command[index]
+        if quote:
+            current.append(char)
+            if char == "\\" and quote == '"' and index + 1 < len(command):
+                current.append(command[index + 1])
+                index += 1
+            elif char == quote:
+                quote = None
+        elif char in "'\"":
+            quote = char
+            current.append(char)
+        elif char == "\\" and index + 1 < len(command):
+            current.append(char + command[index + 1])
+            index += 1
+        elif command.startswith(("&&", "||"), index):
+            segments.append("".join(current))
+            current = []
+            index += 1
+        elif char in "|;\n":
+            segments.append("".join(current))
+            current = []
+        else:
+            current.append(char)
+        index += 1
+    segments.append("".join(current))
+    return segments
 
 
 def tokens(segment):
@@ -222,7 +260,11 @@ def check_bash(command, cwd):
     for root in PROTECTED_ROOTS:
         if root in command or root.replace(" ", "\\ ") in command:
             return "the command names the match data folder"
-    for segment in SEGMENT_SPLIT.split(command):
+    for nested in NESTED_SHELL.finditer(command):
+        reason = check_bash(nested.group(2), cwd)
+        if reason:
+            return reason
+    for segment in split_segments(command):
         segment = segment.strip().lstrip("({ ").strip()
         reason = segment and check_segment(segment, cwd)
         if reason:

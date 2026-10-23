@@ -7,9 +7,14 @@ How the work is planned: [docs/ROADMAP.md](docs/ROADMAP.md); which files matter:
 ```bash
 uv venv --python 3.11 && uv pip sync requirements-lock.txt   # or: pip install -r requirements-lock.txt
 export MTAH_DATA_DIR=/path/to/mtah2027      # or unpack the data bundle into ./data
-python make_submission.py                   # -> evaluation/results/Decul.csv
+python make_submission.py                   # -> evaluation/results/Decul.csv (submitted stage, v4)
 python evaluation/validate_submission.py evaluation/results/Decul.csv
 ```
+
+The method in one line: per-frame evidence from the tracking and Smart Tagging, decoded into whole
+possessions by a three-state (H, A, D) Viterbi. `--stage v0 … v6` rebuilds every intermediate
+stage; `validation/metrica_public.py` reproduces the validation on Metrica's public matches. Both
+are explained in [docs/Decul.md](docs/Decul.md).
 
 `requirements-lock.txt` pins the exact versions the submission was produced with, under Python
 3.11 (the version the organisers test the scorer on). The match data is not in this repository

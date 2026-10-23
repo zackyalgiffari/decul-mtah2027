@@ -60,6 +60,11 @@ CASES = [
     (BLOCK, "Bash", {"command": "python -m starter.load_atd"}),
     (BLOCK, "Bash", {"command": "python3 -c 'from games import asset_paths; print(asset_paths())'"}),
     (BLOCK, "Bash", {"command": "bash experiments/run_all.sh"}),
+    (BLOCK, "Bash", {"command": "bash experiments/final_checks.sh"}),
+    (BLOCK, "Bash", {"command": "./experiments/final_checks.sh"}),
+    (BLOCK, "Bash", {"command": "sh experiments/some_new_runner.sh"}),
+    (BLOCK, "Bash", {"command": "cd experiments && bash final_checks.sh"}),
+    (ALLOW, "Bash", {"command": "sed -n 1,40p experiments/final_checks.sh"}),
     (BLOCK, "Bash", {"command": "jupyter nbconvert --execute starter/02_tracking_atd.ipynb"}),
     # shell: recursive readers that would walk into the data
     (BLOCK, "Bash", {"command": "grep -rn Barcelona ."}),
@@ -83,6 +88,16 @@ CASES = [
     (ALLOW, "Bash", {"command": "python experiments/score_v1.py"}),
     (ALLOW, "Bash", {"command": "ls evaluation/results"}),
     (ALLOW, "Bash", {"command": "echo 'match data stays local'"}),
+    # quotes: a '|' inside a quoted regex is not a pipe...
+    (ALLOW, "Bash", {"command": "git log --all --name-only --format= | sort -u | "
+                                "grep -v -E '^(solution/|CLAUDE.md$|make_submission.py$)'"}),
+    (ALLOW, "Bash", {"command": "grep -n 'cat|head|make_submission' README.md"}),
+    # ...but quoting must not hide a command from the guard
+    (BLOCK, "Bash", {"command": "bash -c 'python make_submission.py'"}),
+    (BLOCK, "Bash", {"command": "sh -c 'cd /tmp; ls " + D + "'"}),
+    (BLOCK, "Bash", {"command": "eval \"cat " + D + "/tactical/x.txt\""}),
+    (BLOCK, "Bash", {"command": "echo ok; python make_submission.py"}),
+    (BLOCK, "Bash", {"command": "python3 -c \"print(open('" + D + "/tactical/x.txt').read())\""}),
 ]
 
 

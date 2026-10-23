@@ -45,14 +45,14 @@ DEFAULT_STAGE = "v4"
 WINDOW = 50  # v0: half-width of the baseline's majority vote, in frames; 50 is the published floor
 
 
-def labels_for(stage, game=GAME):
+def labels_for(stage, game=GAME, use_cache=True):
     """Per-frame labels for one stage of the pipeline."""
     if stage == "v0":
         return smooth(build(game), WINDOW)
     if stage == "v1":
         return decode_match(evidence.from_labels(build(game), home=HOME, away=AWAY), game)
 
-    track = atd.load(game)
+    track = atd.load(game, use_cache=use_cache)
     feats = features.compute(track, GAMES[game]["pitch"], GAMES[game]["fps"])
     level = STAGES.index(stage)
     prior = tagging.team_prior(len(track["ball"]), game) if level >= STAGES.index("v4") else None
@@ -71,9 +71,12 @@ def main():
                             DEFAULT_STAGE))
     parser.add_argument("--out", default=os.path.join(RESULTS_DIR, TEAM + ".csv"),
                         help="where to write the submission")
+    parser.add_argument("--no-cache", action="store_true",
+                        help="parse the raw ATD instead of reusing data/cache/, as a fresh "
+                             "checkout would (the result is identical either way)")
     args = parser.parse_args()
 
-    labels = labels_for(args.stage)
+    labels = labels_for(args.stage, use_cache=not args.no_cache)
 
     path = write_submission(args.out, labels)
     counts = {label: int(np.sum(labels == label)) for label in tuple(LABELS) + ("X",)}

@@ -31,7 +31,7 @@ user-level setting is involved):
 |---|---|
 | `permissions.deny` | Read and Edit of `data/**` and `~/mtah-data/**` |
 | `permissions.ask` | any edit under `.claude/` needs the user's approval |
-| `.claude/hooks/guard_data.py` (PreToolUse, fail-closed) | file tools on the data or on outputs computed from it (`evaluation/results/[Dd]ecul*.csv`, data-like files in `experiments/`); shell commands that name the data, list it, run code that reads it (`make_submission.py`, `starter/baseline.py`, the loaders, notebooks), or search recursively into it |
+| `.claude/hooks/guard_data.py` (PreToolUse, fail-closed) | file tools on the data or on outputs computed from it (`evaluation/results/[Dd]ecul*.csv`, data-like files in `experiments/`); shell commands that name the data, list it, run code that reads it (`make_submission.py`, `starter/baseline.py`, the loaders, notebooks, any `experiments/*.sh`), or search recursively into it |
 
 The hook reads command text only: a new script that opens the data without naming it is not
 caught. That gap is closed only by the Bash sandbox (`sandbox.enabled`, needs `socat`), which is
@@ -73,7 +73,9 @@ disagree, the code is right.
 **5. Scratch — `experiments/`.** Gitignored except its README. Never presented, never committed.
 Local helpers there: `test_decode.py` (synthetic checks), `score_v1_public.py` (v1 on the public
 `baseline_raw.csv`), `check_metrica_sample.py` (public Metrica sample in `~/mtah-public/`), and
-`run_all.sh` — the user's one command for v0–v4 on the real data (blocked for Claude).
+`run_all.sh` — the user's one command for v0–v6 on the real data — and `final_checks.sh` — the
+M8 determinism / clean-checkout / validation run that also prepares `~/decul-upload/`. Every
+`experiments/*.sh` reads the data and is blocked for Claude.
 
 ## Where new code goes
 

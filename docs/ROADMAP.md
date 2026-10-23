@@ -206,23 +206,31 @@ berperilaku mirip; pilih versi yang lebih sederhana kalau dua versi tidak bisa d
 > Kerjakan M7 di docs/ROADMAP.md. Ini output scorer dengan bootstrap untuk versi-versi yang saya
 > punya: <tempel output>. Versi mana yang sebaiknya dibekukan, dan apa alasannya?
 
-## M8 — Paket dan submit ⬜
+## M8 — Paket dan submit 🔄
 
 **Checklist:**
-- [ ] Determinisme: jalankan `make_submission.py` dua kali, `cmp` kedua CSV harus identik
-- [ ] `docs/Decul.md` lengkap: pendekatan, aset dipakai/dibuang, aturan possession, keterbatasan, reproduksi
-- [ ] Audit `git ls-files` terhadap peta file di `CLAUDE.md`: tidak ada file coba-coba di luar `experiments/`
-- [ ] Riwayat git tidak memuat data: `git log --all --stat` hanya berisi file dari peta
-- [ ] Clone bersih + data + satu perintah menghasilkan CSV yang sama
-- [ ] `validate_submission.py` pada **file persis** yang akan diupload
-- [ ] Repo jadi public: `gh repo edit zackyalgiffari/decul-mtah2027 --visibility public --accept-visibility-change-consequences`
-- [ ] Google Form: nama tim `Decul`, upload `Decul.csv` dan `Decul.md`, URL repo
-- [ ] Target submit **16 November** (sehari cadangan)
+- [x] `docs/Decul.md` lengkap: ringkasan, pendekatan, hasil, validasi, aset, aturan possession,
+      keterbatasan, reproduksi, penggunaan AI
+- [x] Audit `git ls-files` terhadap peta file di `CLAUDE.md`: tidak ada file coba-coba di luar
+      `experiments/` (23 Okt)
+- [x] Riwayat git tidak memuat data: semua path yang pernah di-commit adalah file panitia atau
+      file Decul; blob terbesar adalah CSV publik panitia (23 Okt)
+- [ ] **Kamu:** `bash experiments/final_checks.sh` mengecek sekaligus:
+  - [ ] determinisme (run kedua, tanpa cache, harus identik)
+  - [ ] clone bersih + environment baru dari lockfile menghasilkan CSV yang sama
+  - [ ] `validate_submission.py` pada file persis yang akan diupload
+  - [ ] menyiapkan `~/decul-upload/Decul.csv` dan `~/decul-upload/Decul.md`
+- [ ] **Kamu:** minimal 3 anggota berprofil teknis sudah terdaftar dengan nama tim `Decul`
+      (pendaftaran tutup 10 Nov)
+- [ ] **Kamu, setelah semua cek OK:** repo jadi public:
+      `gh repo edit zackyalgiffari/decul-mtah2027 --visibility public --accept-visibility-change-consequences`
+- [ ] **Kamu:** Google Form: nama tim `Decul`, upload kedua file dari `~/decul-upload/`, URL repo
+- [ ] Target submit **16 November** (sehari cadangan). Form bisa diedit sampai deadline, dan
+      hanya respons terakhir yang dinilai.
 
 > **Prompt:**
-> Kerjakan M8 di docs/ROADMAP.md. Audit repo sebelum dibuat public: bandingkan `git ls-files` dan
-> riwayat git dengan peta file di CLAUDE.md, lengkapi docs/Decul.md dari catatan di roadmap, dan
-> beri saya perintah untuk tes determinisme yang akan saya jalankan sendiri.
+> Ini output `bash experiments/final_checks.sh`: <tempel output>. Apakah semua cek lolos dan
+> repo siap dibuat public?
 
 ## M9 — Setelah kompetisi selesai ⬜
 
