@@ -65,6 +65,12 @@ CASES = [
     (BLOCK, "Bash", {"command": "sh experiments/some_new_runner.sh"}),
     (BLOCK, "Bash", {"command": "cd experiments && bash final_checks.sh"}),
     (ALLOW, "Bash", {"command": "sed -n 1,40p experiments/final_checks.sh"}),
+    (BLOCK, "Bash", {"command": "bash scripts/final_checks.sh"}),
+    (BLOCK, "Bash", {"command": "bash scripts/run_all.sh"}),
+    (BLOCK, "Bash", {"command": "./scripts/run_all.sh"}),
+    (BLOCK, "Bash", {"command": "sh scripts/another_runner.sh"}),
+    (ALLOW, "Bash", {"command": "sed -n 1,40p scripts/final_checks.sh"}),
+    (ALLOW, "Bash", {"command": "python tests/test_pipeline.py"}),
     (BLOCK, "Bash", {"command": "jupyter nbconvert --execute starter/02_tracking_atd.ipynb"}),
     # shell: recursive readers that would walk into the data
     (BLOCK, "Bash", {"command": "grep -rn Barcelona ."}),

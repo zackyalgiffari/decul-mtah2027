@@ -140,7 +140,38 @@ v5–v8 remain in the code as ablations (`--stage`).
 | Broadcast video, ATD, homography | no | not synchronised to the tactical timeline; adds alignment risk |
 | Metrica public sample matches | validation only | event-labelled matches to rank stages and check the priors |
 
-## 3. Possession rules implemented
+## 3. Handling missing and noisy tracking
+
+The tracking is automatic and uncorrected (DATA.md): the ball is missing on 41% of graded frames,
+there are 46 track slots for 22 players, and slots appear, vanish, swap identity and occasionally
+duplicate a player. The pipeline is built so that none of this has to be repaired first.
+
+- **Short ball gaps are filled, long ones are not.** A gap of up to 0.5 s between two known ball
+  positions is interpolated linearly (`solution/features.py`); a longer one is left unknown,
+  because inventing a ball position for seconds would invent who had it.
+- **An unknown ball is evidence of nothing, not of a change.** With no ball, or a ball more than
+  3 m from every player, P(home | alive) is 0.5. The decoder then has no reason to pay the price
+  of a change of possession and keeps the current team — the "loose ball stays with the last
+  team" rule of CHALLENGE.md, applied to occlusions as well.
+- **A missing ball is weak dead-ball evidence, never proof.** P(alive) drops from 0.78 (ball
+  seen) to 0.27 (ball not seen), so a long stretch without the ball and with slow players
+  becomes a stoppage, while a ball hidden for a moment in a crowded box does not.
+- **No player identities are needed.** Every feature is team-level: the distance from the ball to
+  the nearest home and the nearest away player, and the mean speed of all tracked players. An
+  identity switch or a fragmented track changes nothing; a duplicated track repeats a distance
+  that is already counted; an empty slot (NaN) is skipped.
+- **Noise is averaged before it is believed.** Player speed is averaged over all tracked players
+  and over ±2 s; ball speed is measured over 0.2 s; a ball counts as still only after a whole
+  second below 0.5 m/s, and as over the line only 0.5 m beyond it.
+- **Consecutive frames are not independent witnesses.** The same occlusion or the same player
+  standing near the ball repeats a reading 25 times a second, so all evidence is tempered (×0.3):
+  about a second of consistent evidence is needed to change state, which removes flicker without
+  a fixed smoothing window.
+- **Each half is decoded on its own**, so nothing carries across halftime, and only the tactical
+  recording is used: the broadcast feed has its own unsynchronised timeline and a third of its
+  frames have no usable homography.
+
+## 4. Possession rules implemented
 
 - **Loose and contested balls** stay with the team that last had possession: when the ball is
   more than 3 m from every player, or not tracked, the frame carries no team evidence and the
@@ -158,7 +189,7 @@ v5–v8 remain in the code as ablations (`--stage`).
 - **Restarts** are not forced: after a stoppage the possessing team is whichever the evidence
   favours once play resumes.
 
-## 4. Limitations
+## 5. Limitations
 
 - **Stoppages with a visible ball.** The largest remaining error is dead ball labelled as play
   (v4, public window: 996 of 1,469 dead-ball frames predicted H or A; every frame predicted D was
@@ -177,20 +208,34 @@ v5–v8 remain in the code as ablations (`--stage`).
 - **No video.** The ball is missing on 41% of graded frames and we do not re-detect it; that is
   the obvious next step with more time.
 
-## 5. Reproduction
+## 6. Reproduction
 
 ```bash
 uv venv --python 3.11 && uv pip sync requirements-lock.txt   # or: pip install -r requirements-lock.txt
-export MTAH_DATA_DIR=/path/to/mtah2027
+export MTAH_DATA_DIR=/path/to/mtah2027                       # or unpack the bundle into ./data
 python make_submission.py            # -> evaluation/results/Decul.csv (stage v4)
 python evaluation/validate_submission.py evaluation/results/Decul.csv
 ```
 
-The output is deterministic: no randomness, no network, pinned versions. We rebuilt the
-submitted file three ways — a second run, a run that parses the raw tracking again
+The output is deterministic: no randomness, no network, pinned versions. `scripts/final_checks.sh`
+rebuilds the submitted file three ways — a second run, a run that parses the raw tracking again
 (`--no-cache`), and a run from a fresh clone of the repository with a fresh environment built
-from `requirements-lock.txt` — and all three produced a byte-identical file (checked on
-23 October 2026). Any stage can be rebuilt with `--stage v0 … v6`.
+from `requirements-lock.txt` — and requires all three to be byte-identical; it passed on
+23 October 2026 and is re-run on the final commit before submission. Any stage can be rebuilt
+with `--stage v0 … v8`.
+
+Everything CPU-only; no GPU and no network once the environment is installed. The first run
+parses the raw tracking once and caches the arrays in `data/cache/` (gitignored, next to the
+data); after that a stage takes a few seconds (v7, with its EM iterations, about fifteen).
+
+| to reproduce | command | needs the match data |
+|---|---|---|
+| the submission | `python make_submission.py` | yes |
+| the public-window tables in §1 (every stage, bootstrap) | `bash scripts/run_all.sh` | yes |
+| the reproduction check above | `bash scripts/final_checks.sh` | yes |
+| v1 from the organisers' published `baseline_raw.csv` | `python validation/v1_from_baseline_raw.py`, then `python evaluation/run_evaluation.py` | no |
+| synthetic checks of the decoder, features, EM and restart tags | `python tests/test_pipeline.py` | no |
+| the validation tables on Metrica's public matches | below | no |
 
 Validation tables in §1 (public data only):
 
@@ -205,7 +250,28 @@ for g in 1 2; do
 done
 ```
 
-## 6. Use of AI tools and data handling
+## 7. Repository layout
+
+The organisers' starter kit is kept unchanged (`games.py`, `starter/`, `evaluation/`, the
+challenge documents; its README is `STARTER_KIT.md`). Team Decul's files:
+
+| path | what it is |
+|---|---|
+| `make_submission.py` | the one command that writes `evaluation/results/Decul.csv`; `--stage v0 … v8` |
+| `solution/decode.py` | three-state Viterbi, per half; transition priors |
+| `solution/evidence.py` | per-frame log-likelihoods for H, A, D from the features |
+| `solution/features.py` | ball gaps, nearest-player distances, ball out / still, player speed |
+| `solution/atd.py` | parses the raw tracking into arrays, cached in `data/cache/` |
+| `solution/tagging.py` | Smart Tagging: team prior (v4), restart timing (v8) |
+| `solution/adapt.py` | EM-learned dead-ball evidence (v7) |
+| `validation/` | stage and prior validation on public data (Metrica sample matches, `baseline_raw.csv`) |
+| `tests/test_pipeline.py` | synthetic checks, no data needed |
+| `scripts/run_all.sh`, `scripts/final_checks.sh` | the runs on the match data behind §1 and §6 |
+| `requirements-lock.txt` | the pinned environment |
+| `docs/Decul.md`, `docs/ROADMAP.md` | this document; the milestone log of how the work went |
+| `.claude/`, `CLAUDE.md` | the AI-tool configuration and the data guard described in §8 |
+
+## 8. Use of AI tools and data handling
 
 Claude Code (Anthropic) helped write the code and this document. The match data was never shown
 to it: a project-scope hook (`.claude/hooks/guard_data.py`) and permission rules

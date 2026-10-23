@@ -81,11 +81,11 @@ BARE_DATA = re.compile(r"(?<![\w.$/-])(\./)?data(?![\w.-])")
 # Running code: anything after one of these executes.
 EXECUTOR = re.compile(
     r"^(\w+=\S*\s+)*(\S*/)?(python3?(\.\d+)?|uv|uvx|bash|sh|zsh|source|\.|ipython|jupyter|papermill)\b"
-    r"|^(\./)?(make_submission\.py|experiments/\S+\.sh)\b")
+    r"|^(\./)?(make_submission\.py|(experiments|scripts)/\S+\.sh)\b")
 # ...and code that reads the data internally, so running it prints whatever it prints about it.
 DATA_READERS = re.compile(
     r"make_submission|starter[/.](baseline|load_atd|load_smart_tagging|load_homography)\b"
-    r"|experiments/\S*\.sh|run_all\.sh|final_checks\.sh"   # every experiments/ script is a data runner
+    r"|(experiments|scripts)/\S*\.sh|run_all\.sh|final_checks\.sh"   # every script there runs on the data
     r"|\bjupyter\b|nbconvert|papermill|\.ipynb\b|solution[/.](atd|features|tagging)\b"
     r"|asset_paths|\brequire\(")
 

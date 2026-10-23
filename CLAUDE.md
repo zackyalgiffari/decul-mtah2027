@@ -31,7 +31,7 @@ user-level setting is involved):
 |---|---|
 | `permissions.deny` | Read and Edit of `data/**` and `~/mtah-data/**` |
 | `permissions.ask` | any edit under `.claude/` needs the user's approval |
-| `.claude/hooks/guard_data.py` (PreToolUse, fail-closed) | file tools on the data or on outputs computed from it (`evaluation/results/[Dd]ecul*.csv`, data-like files in `experiments/`); shell commands that name the data, list it, run code that reads it (`make_submission.py`, `starter/baseline.py`, the loaders, notebooks, any `experiments/*.sh`), or search recursively into it |
+| `.claude/hooks/guard_data.py` (PreToolUse, fail-closed) | file tools on the data or on outputs computed from it (`evaluation/results/[Dd]ecul*.csv`, data-like files in `experiments/`); shell commands that name the data, list it, run code that reads it (`make_submission.py`, `starter/baseline.py`, the loaders, notebooks, any `scripts/*.sh` or `experiments/*.sh`), or search recursively into it |
 
 The hook reads command text only: a new script that opens the data without naming it is not
 caught. That gap is closed only by the Bash sandbox (`sandbox.enabled`, needs `socat`), which is
@@ -49,8 +49,12 @@ not enabled yet. Hook tests: `python3 .claude/hooks/test_guard_data.py`.
 | `solution/` | the Decul pipeline: `decode.py` (Viterbi), `evidence.py`, `features.py`, `atd.py` (parser + cache in `data/cache/`), `tagging.py` |
 | `requirements-lock.txt` | pinned versions the submission is produced with |
 | `validation/metrica_public.py` | stage and prior validation on Metrica's public sample matches (cited in `docs/Decul.md`); data downloaded to `~/mtah-public/`, outside the repo |
+| `validation/v1_from_baseline_raw.py` | stage v1 decoded from the organisers' public `baseline_raw.csv` (no match data) |
+| `tests/test_pipeline.py` | synthetic checks of decoder, features, EM and restart tags — no data; Claude may run it |
+| `scripts/run_all.sh`, `scripts/final_checks.sh` | the user's runs on the match data: every stage scored; the M8 reproduction check that also prepares `~/decul-upload/`. Every `scripts/*.sh` and `experiments/*.sh` reads the data and is blocked for Claude |
+| `STARTER_KIT.md` | the organisers' original README, verbatim |
 | `docs/Decul.md` | the technical document (submitted as `Decul.md`) |
-| `README.md` (top section only) | install and run instructions |
+| `README.md` | the submission's front page: method, results, install and run, file map |
 | `CLAUDE.md`, `docs/ROADMAP.md`, `.claude/` | how the work was organised, and the data guard |
 
 **2. Organiser infrastructure we depend on — read-only.** Do not modify: it keeps
@@ -71,11 +75,9 @@ disagree, the code is right.
 `requirements.txt` and `requirements-starter.txt`.
 
 **5. Scratch — `experiments/`.** Gitignored except its README. Never presented, never committed.
-Local helpers there: `test_decode.py` (synthetic checks), `score_v1_public.py` (v1 on the public
-`baseline_raw.csv`), `check_metrica_sample.py` (public Metrica sample in `~/mtah-public/`), and
-`run_all.sh` — the user's one command for v0–v6 on the real data — and `final_checks.sh` — the
-M8 determinism / clean-checkout / validation run that also prepares `~/decul-upload/`. Every
-`experiments/*.sh` reads the data and is blocked for Claude.
+Holds `check_metrica_sample.py` (parser check on the public Metrica sample in `~/mtah-public/`).
+Anything here the technical document comes to cite is promoted to `tests/`, `validation/` or
+`scripts/`.
 
 ## Where new code goes
 
@@ -95,7 +97,11 @@ into `make_submission.py`, and record the finding (with its bootstrap interval) 
 source ~/venvs/mtah/bin/activate                 # Python 3.11, from requirements-lock.txt
 python evaluation/run_evaluation.py              # score every CSV in evaluation/results/
 python evaluation/run_evaluation.py --bootstrap 1000
+python tests/test_pipeline.py                    # synthetic checks, no data
+python validation/v1_from_baseline_raw.py        # v1 from public baseline_raw.csv, no data
 python make_submission.py                        # needs the data -- the user runs this
+bash scripts/run_all.sh                          # needs the data -- the user runs this
+bash scripts/final_checks.sh                     # needs the data -- the user runs this, before submitting
 python evaluation/validate_submission.py evaluation/results/Decul.csv
 ```
 

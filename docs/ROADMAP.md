@@ -76,7 +76,7 @@ mengubah sebuah prior.
 transF1 **0.3462**, dibandingkan `baseline_smooth50` 0.6207 / 0.3256 / 0.0816. Sinyalnya sama,
 hanya decoder yang diganti. `spellF1` setara: dengan 17 possession, scorer menyatakan selisih di
 bawah ~0.33 masih noise. macroF1 dan ketepatan waktu transisi lebih baik. Parameter
-tidak di-tune ke window publik. Tes sintetis: `experiments/test_decode.py` (16/16).
+tidak di-tune ke window publik. Tes sintetis: `experiments/test_decode.py` (16/16), sekarang `tests/test_pipeline.py`.
 
 **Tujuan:** mengganti majority vote dengan decoding Viterbi 3-state (H, A, D) yang memberi biaya
 pada setiap pergantian state, dijalankan per babak.
@@ -249,14 +249,19 @@ berperilaku mirip; pilih versi yang lebih sederhana kalau dua versi tidak bisa d
       `experiments/` (23 Okt)
 - [x] Riwayat git tidak memuat data: semua path yang pernah di-commit adalah file panitia atau
       file Decul; blob terbesar adalah CSV publik panitia (23 Okt)
-- [x] **Kamu:** `bash experiments/final_checks.sh`, **ALL CHECKS PASSED** (23 Okt, `main` =
+- [x] **Kamu:** `bash experiments/final_checks.sh` (sekarang `scripts/final_checks.sh`), **ALL CHECKS PASSED** (23 Okt, `main` =
       `f5b3413`, `Decul.csv` sha256 `c499eee84cf9ec00`):
   - [x] determinisme: run kedua tanpa cache byte-identik
   - [x] clone bersih + environment baru dari lockfile menghasilkan CSV yang sama
   - [x] `validate_submission.py` OK pada file persis yang akan diupload (366 possession, 10,5 s)
   - [x] `~/decul-upload/Decul.csv` dan `~/decul-upload/Decul.md` siap
-- [ ] **Kamu:** minimal 3 anggota berprofil teknis sudah terdaftar dengan nama tim `Decul`
-      (pendaftaran tutup 10 Nov)
+- [x] **Kamu:** minimal 3 anggota berprofil teknis sudah terdaftar dengan nama tim `Decul`
+      (dikonfirmasi 23 Okt)
+- [x] Struktur repo dirapikan untuk submission (23 Okt): `README.md` menjadi halaman depan
+      Decul, README panitia dipindah utuh ke `STARTER_KIT.md`, dan script yang dikutip dokumen
+      teknis dipindah dari `experiments/` (gitignored) ke `scripts/`, `tests/`, dan `validation/`,
+      supaya juri bisa menjalankannya. `docs/Decul.md` dilengkapi bagian wajib "Handling missing
+      and noisy tracking", tabel cara mereproduksi, dan peta repository.
 - [ ] **Kamu, setelah semua cek OK:** repo jadi public:
       `gh repo edit zackyalgiffari/decul-mtah2027 --visibility public --accept-visibility-change-consequences`
 - [ ] **Kamu:** Google Form: nama tim `Decul`, upload kedua file dari `~/decul-upload/`, URL repo
@@ -264,7 +269,7 @@ berperilaku mirip; pilih versi yang lebih sederhana kalau dua versi tidak bisa d
       hanya respons terakhir yang dinilai.
 
 **Saat siap submit (rencana: 14–16 Nov, repo tetap private sampai saat itu):**
-1. Jalankan sekali lagi `bash experiments/final_checks.sh`. `main` bergeser setiap ada commit
+1. Jalankan sekali lagi `bash scripts/final_checks.sh`. `main` bergeser setiap ada commit
    baru, termasuk yang hanya mengubah dokumen, jadi cek ini membuktikan commit terakhir yang akan
    di-clone juri. Harus muncul `ALL CHECKS PASSED`.
 2. Minta Claude membuat repo public (prompt di bawah).
@@ -272,7 +277,7 @@ berperilaku mirip; pilih versi yang lebih sederhana kalau dua versi tidak bisa d
    `~/decul-upload/Decul.md`, URL `https://github.com/zackyalgiffari/decul-mtah2027`.
 
 > **Prompt:**
-> Ini output `bash experiments/final_checks.sh` yang terbaru: <tempel output>. Kalau semua lolos,
+> Ini output `bash scripts/final_checks.sh` yang terbaru: <tempel output>. Kalau semua lolos,
 > buat repo decul-mtah2027 jadi public sekarang.
 
 ## M9 — Setelah kompetisi selesai ⬜
