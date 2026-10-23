@@ -4,13 +4,15 @@ Team Decul's entry to Phase 1. The organisers' starter kit is kept unchanged bel
 `make_submission.py` and `solution/`, and our technical document is [docs/Decul.md](docs/Decul.md).
 
 ```bash
-pip install -r requirements.txt
+uv venv --python 3.11 && uv pip sync requirements-lock.txt   # or: pip install -r requirements-lock.txt
 export MTAH_DATA_DIR=/path/to/mtah2027      # or unpack the data bundle into ./data
 python make_submission.py                   # -> evaluation/results/Decul.csv
 python evaluation/validate_submission.py evaluation/results/Decul.csv
 ```
 
-The match data is not in this repository and must never be committed (see [RULES.md](RULES.md)).
+`requirements-lock.txt` pins the exact versions the submission was produced with, under Python
+3.11 (the version the organisers test the scorer on). The match data is not in this repository
+and must never be committed (see [RULES.md](RULES.md)).
 
 ---
 

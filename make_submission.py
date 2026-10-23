@@ -1,13 +1,13 @@
 """Team Decul's submission: one command, from the provided data to Decul.csv.
 
-    pip install -r requirements.txt
+    uv venv --python 3.11 && uv pip sync requirements-lock.txt   # or: pip install -r requirements-lock.txt
     export MTAH_DATA_DIR=/path/to/mtah2027      # or unpack the bundle into ./data
     python make_submission.py
     python evaluation/validate_submission.py evaluation/results/Decul.csv
 
 This is the command the rules ask for: running it against the provided data must reproduce the
 submitted file exactly, not approximately. So everything here is deterministic -- no random
-state, no network, no hosted model.
+state, no network, no hosted model -- and the versions are pinned in requirements-lock.txt.
 
 v0 is the published baseline_smooth50 under Decul's name, so the loop from data to a scored file
 works end to end before the real pipeline exists. The Decul pipeline will live in solution/ and

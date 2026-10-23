@@ -30,7 +30,7 @@ _Where it fails, and what we would fix with more time._
 ## 5. Reproduction
 
 ```bash
-pip install -r requirements.txt
+uv venv --python 3.11 && uv pip sync requirements-lock.txt   # or: pip install -r requirements-lock.txt
 export MTAH_DATA_DIR=/path/to/mtah2027
 python make_submission.py            # -> evaluation/results/Decul.csv
 python evaluation/validate_submission.py evaluation/results/Decul.csv
