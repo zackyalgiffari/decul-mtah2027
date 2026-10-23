@@ -43,6 +43,7 @@ The pipeline was built in stages so each layer's contribution could be measured 
 | v4 | Smart Tagging as a prior on which team has the ball | **submitted** |
 | v5 | no team evidence while the ball travels faster than 7 m/s | tried, dropped |
 | v6 | a ball standing still on a line or the centre spot counts towards a stoppage | tried, dropped |
+| v7 | v4 with the alive/dead evidence learned from the match itself by EM (`solution/adapt.py`) | tried, dropped |
 
 Parameters are football priors written in each module's `# Params` block. None was searched on
 the public five minutes, which hold too few possessions to choose between versions.
@@ -61,6 +62,7 @@ cannot rank stages whose intervals overlap.
 | **v4** | **0.6821** | **0.4316** [0.284, 0.590] | 21 | **0.924** |
 | v5 | 0.6754 | 0.4000 [0.244, 0.556] | 19 | 0.924 |
 | v6 | 0.6754 | 0.4000 [0.244, 0.556] | 19 | 0.924 |
+| v7 | 0.6593 | 0.3800 [0.240, 0.520] | 23 | 0.911 |
 
 Over the full match the number of predicted possessions falls from 669 (v0) to 366 (v4), with
 mean duration rising from 7.6 s to 10.5 s; dead ball covers 39% of graded frames, in line with
@@ -84,6 +86,7 @@ score. Smart Tagging is not available there, so v4 and v6 cannot be run. spellF1
 | v2 distances | 0.527 [0.489, 0.567] | 0.534 [0.494, 0.575] |
 | v3 dead ball | 0.511 [0.473, 0.550] | 0.533 [0.492, 0.573] |
 | v5 fast ball | 0.520 [0.468, 0.571] | 0.542 [0.492, 0.591] |
+| v7 EM (= v3 + EM here) | 0.508 [0.471, 0.545] | 0.533 [0.494, 0.572] |
 
 - The decoder and the distance evidence are a real gain: v2 beats the baseline on both matches
   with non-overlapping intervals.
@@ -94,7 +97,7 @@ score. Smart Tagging is not available there, so v4 and v6 cannot be run. spellF1
   it to 0.15 halves the number of predicted possessions. The submitted values sit in the stable
   region and were not changed.
 
-### Why v4, and why v5 and v6 were dropped
+### Why v4, and why v5, v6 and v7 were dropped
 
 v4 is the stage every diagnostic favours on the competition data: best spellF1 and macroF1,
 possession count closest to the truth among the stages that keep transition timing, best
@@ -103,7 +106,18 @@ matched fewer changes of possession in time (7 → 4 of 20 within 1 s): an inter
 exactly when a fast ball is cut out, so ignoring fast balls removed the evidence at the moment
 that mattered. On the public matches it predicted far too few possessions (216 vs 328, 198 vs
 330). v6 changed about 390 frames in the whole match and nothing in the public window: stoppages
-here are rarely a ball standing on a line. Both remain in the code as ablations.
+here are rarely a ball standing on a line.
+
+v7 tested whether the dead-ball weakness was a tuning problem. The hand-set alive/dead evidence
+fits Metrica's cleaner tracking (dead-ball recall 0.80–0.90) far better than this match's
+(0.32), so v7 learned it from the match itself, unsupervised, by Baum–Welch on a 32-symbol
+description of each frame (ball seen, over the line, player-speed bin, ball still), keeping the
+team evidence and the transition priors fixed. On the public matches it was level with v3. On
+the competition's public window dead-ball recall did not move (0.322 → 0.323), dead-ball
+precision fell from 1.00 to 0.75 and spellF1 from 0.4316 to 0.3800. The missed stoppages look
+like live play in every tracking feature we have — an information limit, not a tuning one.
+
+v5, v6 and v7 remain in the code as ablations (`--stage`).
 
 ## 2. Assets used and dropped
 
@@ -139,7 +153,9 @@ here are rarely a ball standing on a line. Both remain in the code as ablations.
 - **Stoppages with a visible ball.** The largest remaining error is dead ball labelled as play
   (v4, public window: 996 of 1,469 dead-ball frames predicted H or A; every frame predicted D was
   correct). A ball placed for a throw-in or a free kick looks like a ball at a player's feet. A
-  restart cue for balls standing on a line (v6) did not fire often enough to help.
+  restart cue for balls standing on a line (v6) did not fire often enough to help, and learning
+  the dead-ball evidence from the match (v7) did not separate them either: the tracking alone
+  does not carry the information.
 - **Validation.** The competition's labelled data is five minutes with 17 possessions. The larger
   check on two public Metrica matches uses event-derived labels and cleaner tracking, so it
   supports the ranking of stages but not their absolute scores, and it cannot test v4, whose

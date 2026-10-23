@@ -197,6 +197,21 @@ Sample Game 1 dan 2 (328 dan 330 possession). Kode di `validation/metrica_public
 
 **Keputusan M7: v4 dibekukan.** Berikutnya M8 (paket dan submit).
 
+**M7c, v7: dead-ball dipelajari dari pertandingan sendiri (EM), dicoba lalu dibuang (run
+keempat, 23 Okt):**
+
+| | v4 | v7 |
+|---|---|---|
+| spellF1 publik [5–95%] | **0.4316** [0.284, 0.590] | 0.3800 [0.240, 0.520] |
+| recall D / presisi D | 0.322 / **1.00** | 0.323 / 0.75 |
+| alive/dead F1 | **0.924** | 0.911 |
+| possession publik / seluruh match | **21** / 366 | 23 / 402 |
+
+Di Metrica v7 setara v3, tapi di data kompetisi recall `D` tidak bergerak sama sekali. Artinya
+dead ball yang terlewat **tidak bisa dibedakan dari permainan hidup dengan fitur tracking mana
+pun yang kita punya**. Ini batas informasi, bukan masalah penyetelan. Langkah berikutnya butuh
+sumber informasi baru: **v8**, waktu restart dari Smart Tagging.
+
 **Tujuan:** memastikan perbaikan itu nyata, bukan kebetulan dari 17 possession.
 **Cek:** `--bootstrap 1000`; jumlah dan durasi possession masuk akal untuk dua babak; kedua babak
 berperilaku mirip; pilih versi yang lebih sederhana kalau dua versi tidak bisa dibedakan.
