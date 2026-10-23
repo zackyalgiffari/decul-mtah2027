@@ -215,11 +215,12 @@ berperilaku mirip; pilih versi yang lebih sederhana kalau dua versi tidak bisa d
       `experiments/` (23 Okt)
 - [x] Riwayat git tidak memuat data: semua path yang pernah di-commit adalah file panitia atau
       file Decul; blob terbesar adalah CSV publik panitia (23 Okt)
-- [ ] **Kamu:** `bash experiments/final_checks.sh` mengecek sekaligus:
-  - [ ] determinisme (run kedua, tanpa cache, harus identik)
-  - [ ] clone bersih + environment baru dari lockfile menghasilkan CSV yang sama
-  - [ ] `validate_submission.py` pada file persis yang akan diupload
-  - [ ] menyiapkan `~/decul-upload/Decul.csv` dan `~/decul-upload/Decul.md`
+- [x] **Kamu:** `bash experiments/final_checks.sh`, **ALL CHECKS PASSED** (23 Okt, `main` =
+      `f5b3413`, `Decul.csv` sha256 `c499eee84cf9ec00`):
+  - [x] determinisme: run kedua tanpa cache byte-identik
+  - [x] clone bersih + environment baru dari lockfile menghasilkan CSV yang sama
+  - [x] `validate_submission.py` OK pada file persis yang akan diupload (366 possession, 10,5 s)
+  - [x] `~/decul-upload/Decul.csv` dan `~/decul-upload/Decul.md` siap
 - [ ] **Kamu:** minimal 3 anggota berprofil teknis sudah terdaftar dengan nama tim `Decul`
       (pendaftaran tutup 10 Nov)
 - [ ] **Kamu, setelah semua cek OK:** repo jadi public:
@@ -228,9 +229,17 @@ berperilaku mirip; pilih versi yang lebih sederhana kalau dua versi tidak bisa d
 - [ ] Target submit **16 November** (sehari cadangan). Form bisa diedit sampai deadline, dan
       hanya respons terakhir yang dinilai.
 
+**Saat siap submit (rencana: 14–16 Nov, repo tetap private sampai saat itu):**
+1. Jalankan sekali lagi `bash experiments/final_checks.sh`. `main` bergeser setiap ada commit
+   baru, termasuk yang hanya mengubah dokumen, jadi cek ini membuktikan commit terakhir yang akan
+   di-clone juri. Harus muncul `ALL CHECKS PASSED`.
+2. Minta Claude membuat repo public (prompt di bawah).
+3. Isi Google Form: nama tim `Decul`, upload `~/decul-upload/Decul.csv` dan
+   `~/decul-upload/Decul.md`, URL `https://github.com/zackyalgiffari/decul-mtah2027`.
+
 > **Prompt:**
-> Ini output `bash experiments/final_checks.sh`: <tempel output>. Apakah semua cek lolos dan
-> repo siap dibuat public?
+> Ini output `bash experiments/final_checks.sh` yang terbaru: <tempel output>. Kalau semua lolos,
+> buat repo decul-mtah2027 jadi public sekarang.
 
 ## M9 — Setelah kompetisi selesai ⬜
 

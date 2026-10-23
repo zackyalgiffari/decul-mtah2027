@@ -158,10 +158,11 @@ python make_submission.py            # -> evaluation/results/Decul.csv (stage v4
 python evaluation/validate_submission.py evaluation/results/Decul.csv
 ```
 
-The output is deterministic: no randomness, no network, pinned versions. Before submitting, the
-file is rebuilt three ways — a second run, a run that parses the raw tracking again
-(`--no-cache`), and a run from a fresh clone with a fresh environment — and all three must be
-byte-identical to the uploaded file. Any stage can be rebuilt with `--stage v0 … v6`.
+The output is deterministic: no randomness, no network, pinned versions. We rebuilt the
+submitted file three ways — a second run, a run that parses the raw tracking again
+(`--no-cache`), and a run from a fresh clone of the repository with a fresh environment built
+from `requirements-lock.txt` — and all three produced a byte-identical file (checked on
+23 October 2026). Any stage can be rebuilt with `--stage v0 … v6`.
 
 Validation tables in §1 (public data only):
 
