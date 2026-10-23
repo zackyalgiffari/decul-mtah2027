@@ -44,7 +44,7 @@ Ini contoh gaya pelabelan, **bukan** angka untuk tuning.
 
 ---
 
-## Status 23 Okt: M3–M6 selesai, M7a (v5, v6) menunggu skor
+## Status 23 Okt: M3–M6 selesai, v4 dibekukan sebagai default, M7b (validasi publik) berjalan
 
 **Run pertama di data resmi (23 Okt)**, window publik, 17 possession:
 
@@ -64,12 +64,9 @@ bergerak hanya sekitar 55–60 dari ~95 menit.
 window publik belum membuktikan v4 > v0. Kelemahan terbesar: dead ball yang dikira hidup (v4:
 996 dari 1.469 frame `D` publik ditebak H/A). Itu sasaran v5 dan v6.
 
-**Langkah berikutnya untukmu:** jalankan lagi `bash experiments/run_all.sh` (sekarang v0–v6) dan
-tempel outputnya.
-
-> **Prompt:**
-> Ini output `bash experiments/run_all.sh` dengan v5 dan v6: <tempel output>. Bandingkan dengan
-> v4 memakai bootstrap dan semua indikator, lalu putuskan tahap mana yang dibekukan untuk M7.
+v5 dan v6 sudah diuji dan dibuang (lihat M7). Langkah berikutnya, M7b, dikerjakan penuh oleh
+Claude di data publik. Kamu baru perlu menjalankan `run_all.sh` lagi kalau validasi itu
+mengubah sebuah prior.
 
 ---
 
@@ -161,11 +158,25 @@ Ingat: tag `N/A` (semua throw-in) dan interval fase ≠ possession.
 
 ## M7 — Uji robustness dan bekukan parameter 🔄
 
-**M7a, kandidat terakhir (kode siap, menunggu skor):**
-- `v5`: bola yang melaju lebih dari 7 m/s (umpan, tendangan) tidak dihitung sebagai bukti tim.
-  Sentuhan atau defleksi tanpa kontrol bukan pergantian possession (CHALLENGE.md).
-- `v6`: bola diam di garis atau di titik tengah dianggap menunggu throw-in, corner, atau
-  kick-off, sehingga condong ke `D`. Sasarannya recall `D`.
+**M7a, v5 dan v6: dicoba lalu dibuang (run kedua, 23 Okt):**
+
+| | v4 | v5 (bola cepat ≠ kontrol) | v6 (+ isyarat restart) |
+|---|---|---|---|
+| spellF1 [5–95%] | **0.4316** [0.284, 0.590] | 0.4000 [0.244, 0.556] | 0.4000 (identik v5) |
+| macroF1 | **0.6821** | 0.6754 | 0.6754 |
+| transisi tepat (±1 s) | **7 / 20** | 4 / 20 | 4 / 20 |
+| possession publik / seluruh match | 21 / 366 | 19 / 316 | 19 / 317 |
+
+- `v5` mengurangi possession palsu, tapi batasnya meleset: intersep terjadi tepat saat umpan
+  cepat dipotong, sehingga bukti pergantian tim hilang di momen yang paling penting.
+- `v6` hampir tidak berpengaruh (~390 frame berubah di seluruh pertandingan). Stoppage di data
+  ini jarang berupa "bola diam di garis".
+- **Keputusan: v4 tetap default.** Keduanya dipertahankan di kode sebagai ablation untuk dokumen
+  teknis.
+
+**M7b, validasi di pertandingan publik Metrica (🔄):** label H/A/D diturunkan dari event data
+Sample Game 1 dan 2 (ratusan possession), untuk menguji pilihan tahap dan prior secara jujur.
+Kode di `validation/metrica_public.py`.
 
 **Tujuan:** memastikan perbaikan itu nyata, bukan kebetulan dari 17 possession.
 **Cek:** `--bootstrap 1000`; jumlah dan durasi possession masuk akal untuk dua babak; kedua babak

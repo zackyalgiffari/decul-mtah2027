@@ -35,8 +35,15 @@ The pipeline is built in stages so each layer's contribution is measured on its 
 | v2 | team evidence from metres to the nearest home and away player; ball gaps ≤ 0.5 s interpolated |
 | v3 | dead-ball evidence: ball over the line, players walking, ball standing still |
 | v4 | Smart Tagging as a prior on which team has the ball |
-| v5 | no team evidence while the ball travels faster than 7 m/s (a pass or shot passing a player) |
-| v6 | a ball standing still on a line or the centre spot counts towards a stoppage (restart waiting) |
+| v5 *(tried, dropped)* | no team evidence while the ball travels faster than 7 m/s (a pass or shot passing a player) |
+| v6 *(tried, dropped)* | a ball standing still on a line or the centre spot counts towards a stoppage (restart waiting) |
+
+**Submitted: v4.** v5 removed spurious possessions (public window 21 → 19, full match 366 → 316)
+but matched fewer changes of possession in time (7 → 4 of 20 within 1 s): an interception
+happens exactly when a fast ball is cut out, so ignoring fast balls removed the evidence at the
+moment that mattered; spellF1 0.4316 → 0.4000. v6 changed about 390 frames in the whole match
+and nothing in the public window — stoppages here are rarely a ball standing on a line. Both stay
+in the code as ablations.
 
 Parameters are football priors written in each module's `# Params` block, not values searched on
 the public five minutes, which hold too few possessions to choose between versions.
