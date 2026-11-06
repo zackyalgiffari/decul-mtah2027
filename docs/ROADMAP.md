@@ -158,6 +158,15 @@ Ingat: tag `N/A` (semua throw-in) dan interval fase ≠ possession.
 
 ## M7 — Uji robustness dan bekukan parameter 🔄
 
+> **Catatan 6 Nov, setelah klarifikasi aturan panitia** (upstream `f8f2629` dan email ke semua
+> peserta): window publik hanya untuk cek kebenaran pipeline, tidak untuk memilih antar versi.
+> Log di bawah ini dibiarkan apa adanya sebagai catatan jujur dari proses 23 Okt. Angka window
+> publik di dalamnya adalah diagnostik pada saat itu, **bukan** dasar keputusan yang berlaku.
+> Dasar yang berlaku ada di `docs/Decul.md`, bagian "How the submitted stage was chosen": v4
+> sudah jadi default sebelum ada skor apa pun (`75b971e`), dan v5–v8 tidak diadopsi berdasarkan
+> data eksternal Metrica atau tanpa memakai ground truth. Eksperimen baru mengikuti aturan
+> `CLAUDE.md`: diadopsi hanya kalau terbukti lebih baik di data eksternal.
+
 **M7a, v5 dan v6: dicoba lalu dibuang (run kedua, 23 Okt):**
 
 | | v4 | v5 (bola cepat ≠ kontrol) | v6 (+ isyarat restart) |
@@ -262,6 +271,10 @@ berperilaku mirip; pilih versi yang lebih sederhana kalau dua versi tidak bisa d
       teknis dipindah dari `experiments/` (gitignored) ke `scripts/`, `tests/`, dan `validation/`,
       supaya juri bisa menjalankannya. `docs/Decul.md` dilengkapi bagian wajib "Handling missing
       and noisy tracking", tabel cara mereproduksi, dan peta repository.
+- [x] Klarifikasi aturan panitia (upstream `f8f2629` + email ke semua peserta): window publik
+      tidak boleh dipakai untuk memilih versi, tuning hanya di data eksternal, dan dokumen teknis
+      wajib mendaftar data berlabel. Upstream di-merge, `docs/Decul.md` disesuaikan (bagian "How
+      the submitted stage was chosen" dan "Labelled data"), 6 Nov
 - [ ] **Kamu, setelah semua cek OK:** repo jadi public:
       `gh repo edit zackyalgiffari/decul-mtah2027 --visibility public --accept-visibility-change-consequences`
 - [ ] **Kamu:** Google Form: nama tim `Decul`, upload kedua file dari `~/decul-upload/`, URL repo

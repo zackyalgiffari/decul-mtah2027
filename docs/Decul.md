@@ -11,7 +11,8 @@ move — plus a Smart Tagging prior. On two public Metrica matches (≈330 posse
 decoder with distance evidence beats the published baseline by 0.13 spellF1 with
 non-overlapping bootstrap intervals; on the competition's public five minutes the submitted
 stage scores spellF1 0.4316 against the baseline's 0.3256 (17 possessions, so those intervals
-still overlap).
+still overlap; that window is a correctness check and chose nothing). The submitted stage was
+fixed before any score existed, and nothing in it is trained or tuned on the provided game.
 
 ---
 
@@ -46,13 +47,17 @@ The pipeline was built in stages so each layer's contribution could be measured 
 | v7 | v4 with the alive/dead evidence learned from the match itself by EM (`solution/adapt.py`) | tried, dropped |
 | v8 | v4 + Smart Tagging restarts (set pieces, goal → kick-off) as dead-ball evidence | tried, dropped |
 
-Parameters are football priors written in each module's `# Params` block. None was searched on
-the public five minutes, which hold too few possessions to choose between versions.
+Parameters are football priors written in each module's `# Params` block, set by hand before any
+score existed and checked only on external data (two public Metrica matches, below). None was
+searched on the competition's public five minutes, and the submitted pipeline learns nothing from
+the provided game. The submitted stage, v4, was the default before the first score was computed,
+and its parameters have not changed since (see *How the submitted stage was chosen*).
 
 ### Results on the competition's public five minutes
 
-17 possessions; 5–95% block-bootstrap interval, 1000 draws. This window checks correctness; it
-cannot rank stages whose intervals overlap.
+17 possessions; 5–95% block-bootstrap interval, 1000 draws. This window checks that the pipeline
+is correct — frames aligned, file well-formed, labels meaning what we think. It is not a tuning
+set and does not choose between stages; the table is reported for completeness.
 
 | stage | macroF1 | spellF1 [5–95%] | possessions (truth 17) | alive/dead F1 |
 |---|---|---|---|---|
@@ -92,40 +97,59 @@ score. Smart Tagging is not available there, so v4 and v6 cannot be run. spellF1
 
 - The decoder and the distance evidence are a real gain: v2 beats the baseline on both matches
   with non-overlapping intervals.
-- v3 keeps spellF1 and raises dead-ball recall on Game 1 (0.75 → 0.80) and alive/dead F1, as it
-  did on the competition's public window; it is kept.
+- v3, part of the planned pipeline, keeps spellF1 and raises dead-ball recall on Game 1
+  (0.75 → 0.80) and alive/dead F1.
 - The priors are not fragile: an expected possession of 6, 12 or 24 s gives the same result
   within noise, while doubling the tempering to 0.6 is clearly worse on both matches and halving
   it to 0.15 halves the number of predicted possessions. The submitted values sit in the stable
   region and were not changed.
 
-### Why v4, and why v5–v8 were dropped
+### How the submitted stage was chosen
 
-v4 is the stage every diagnostic favours on the competition data: best spellF1 and macroF1,
-possession count closest to the truth among the stages that keep transition timing, best
-alive/dead F1. v5 removed spurious possessions (public window 21 → 19, full match 366 → 316) but
-matched fewer changes of possession in time (7 → 4 of 20 within 1 s): an interception happens
-exactly when a fast ball is cut out, so ignoring fast balls removed the evidence at the moment
-that mattered. On the public matches it predicted far too few possessions (216 vs 328, 198 vs
-330). v6 changed about 390 frames in the whole match and nothing in the public window: stoppages
-here are rarely a ball standing on a line.
+Two rules were written into the project plan before any score existed (`docs/ROADMAP.md`,
+commit `97760cc`): the full pipeline v0–v4 is the submission, and a change is adopted only if it
+is shown to be better — when two versions cannot be told apart, the simpler one stays.
+`DEFAULT_STAGE = "v4"` is in `make_submission.py` from its first commit (`75b971e`), made before
+the first run on the data, and every v0–v4 parameter is still the one of that commit.
 
-v7 tested whether the dead-ball weakness was a tuning problem. The hand-set alive/dead evidence
-fits Metrica's cleaner tracking (dead-ball recall 0.80–0.90) far better than this match's
-(0.32), so v7 learned it from the match itself, unsupervised, by Baum–Welch on a 32-symbol
-description of each frame (ball seen, over the line, player-speed bin, ball still), keeping the
-team evidence and the transition priors fixed. On the public matches it was level with v3. On
-the competition's public window dead-ball recall did not move (0.322 → 0.323), dead-ball
-precision fell from 1.00 to 0.75 and spellF1 from 0.4316 to 0.3800. The missed stoppages look
-like live play in every tracking feature we have — an information limit, not a tuning one.
+v4 itself cannot be tested on external data: Metrica's public matches have no Smart Tagging. It is
+submitted because it is the planned design, with a deliberately modest tag prior (odds ×2, because
+a phase is not a possession), not because it scored best anywhere.
 
-v8 therefore brought new information: every Smart Tagging set piece is a restart, so play is
-dead shortly before it, and a goal is followed by a dead stretch until the kick-off. Dead-ball
-recall rose from 0.32 to 0.46, but precision fell from 1.00 to 0.66 — 347 live frames on the
-public window became dead ball — team accuracy fell from 0.845 to 0.787, spellF1 from 0.4316 to
-0.3784, and the full-match dead-ball share rose to 45%. The tags locate restarts only to within
-a few seconds, too coarsely to place dead-ball boundaries frame by frame. Moving or weakening
-the window would have meant fitting four public stoppages, so v8 was dropped as built.
+v5–v8 were explored afterwards, one weakness at a time, and **none was adopted**, so the submitted
+file is the one we would have produced had they never been tried. While working we also read
+their scores on the public five minutes (table above). Under the rules that window chooses
+nothing, so the reasons that stand are the ones that do not use it:
+
+| stage | evidence without the public window | decision |
+|---|---|---|
+| v5 | on both Metrica matches it predicts far too few possessions (216 vs 328, 198 vs 330); spellF1 interval overlaps v2 and v3 | not shown better → not adopted |
+| v6 | changes about 390 frames of the whole match: stoppages here are rarely a ball standing on a line | no measurable effect → not adopted |
+| v7 | level with v3 on both Metrica matches (0.508 vs 0.511, 0.533 vs 0.533) | simpler hand-set evidence stays |
+| v8 | no external test possible (no Smart Tagging in Metrica's matches); full-match dead-ball share rises from 39% to 45% | not shown better → not adopted, and not retuned |
+
+### What the explorations showed
+
+These observations explain the limitations in §5. The public-window numbers are diagnostics of
+behaviour, not grounds for the decision above.
+
+- **v5** removed spurious possessions (full match 366 → 316) but matched fewer changes of
+  possession in time: an interception happens exactly when a fast ball is cut out, so ignoring
+  fast balls removed the evidence at the moment that mattered.
+- **v7** tested whether the dead-ball weakness was a tuning problem. The hand-set alive/dead
+  evidence fits Metrica's cleaner tracking (dead-ball recall 0.80–0.90) far better than this
+  match's (0.32 on the public window), so v7 learned it from the match itself, without labels,
+  by Baum–Welch on a 32-symbol description of each frame (ball seen, over the line, player-speed
+  bin, ball still), keeping the team evidence and the transition priors fixed. Dead-ball recall
+  did not move (0.322 → 0.323). The missed stoppages look like live play in every tracking
+  feature we have — an information limit, not a tuning one. v7 is the only stage that learns
+  anything from the provided game, and it is not in the submission.
+- **v8** therefore brought new information: every Smart Tagging set piece is a restart, so play
+  is dead shortly before it, and a goal is followed by a dead stretch until the kick-off. It
+  found more stoppages (dead-ball recall 0.32 → 0.46) but turned live play into dead ball too
+  (precision 1.00 → 0.66): the tags locate restarts only to within a few seconds, too coarsely to
+  place dead-ball boundaries frame by frame. Moving or weakening the window would have meant
+  fitting four public stoppages, which the rules exclude, so v8 was left as built.
 
 v5–v8 remain in the code as ablations (`--stage`).
 
@@ -139,6 +163,19 @@ v5–v8 remain in the code as ablations (`--stage`).
 | Tactical video | no | the tracking already encodes it; ball detection from video left as future work |
 | Broadcast video, ATD, homography | no | not synchronised to the tactical timeline; adds alignment risk |
 | Metrica public sample matches | validation only | event-labelled matches to rank stages and check the priors |
+
+### Labelled data
+
+No labels on the provided game were used for training, tuning or validation, and nothing about it
+was produced or corrected by hand. Every label the submission outputs comes from the algorithm.
+The only labelled data is external, and nothing is trained on it:
+
+| dataset | source | labelled by | amount | used for |
+|---|---|---|---|---|
+| Metrica Sports sample data, Sample Game 1 and 2 (anonymised; synchronised tracking and events) | [github.com/metrica-sports/sample-data](https://github.com/metrica-sports/sample-data) | event data by Metrica Sports; per-frame H/A/D derived from the events by a fixed rule in our code (`validation/metrica_public.py`), with no hand labels of ours | 2 matches, 328 + 330 possessions | ranking stages v0–v3, v5 and v7; checking the sensitivity of the priors |
+| the organisers' public five minutes | `evaluation/gt/` | the organisers | 17 possessions | checking correctness (alignment, file format, label meaning) only |
+
+We thank Metrica Sports for publishing the sample data.
 
 ## 3. Handling missing and noisy tracking
 
@@ -201,8 +238,9 @@ duplicate a player. The pipeline is built so that none of this has to be repaire
   and the restart from video is the remaining route.
 - **Validation.** The competition's labelled data is five minutes with 17 possessions. The larger
   check on two public Metrica matches uses event-derived labels and cleaner tracking, so it
-  supports the ranking of stages but not their absolute scores, and it cannot test v4, whose
-  Smart Tagging prior rests on the public window and consistent diagnostics alone.
+  supports the ranking of stages but not their absolute scores. It cannot test v4: Metrica's
+  matches have no Smart Tagging, so the tag prior — modest by design and fixed before any score
+  — is the one part of the submission with no external check.
 - **Hand-set priors.** Durations, distances and odds come from football knowledge, not learning;
   a model trained on labelled matches could set them better.
 - **No video.** The ball is missing on 41% of graded frames and we do not re-detect it; that is

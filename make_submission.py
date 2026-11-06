@@ -22,8 +22,9 @@ its own (--stage; the default is the full pipeline):
     v7  v4 with the alive/dead evidence learned from the match itself (EM)    (solution/adapt.py)
     v8  v4 + Smart Tagging restarts (set pieces, goal -> kick-off) as dead-ball evidence
 
-The default stays at the last stage whose gain held up across the scorer's diagnostics, not the
-newest one (docs/ROADMAP.md, M7).
+The default, v4, was fixed before any score existed and its parameters have not changed since;
+v5-v8 were explored afterwards and none was adopted (docs/Decul.md, "How the submitted stage was
+chosen").
 """
 
 import argparse

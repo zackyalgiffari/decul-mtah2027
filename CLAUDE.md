@@ -19,8 +19,15 @@ Deadline **2026-11-17**. The plan, milestone by milestone, is [docs/ROADMAP.md](
   so they stay gitignored and guarded. All of it is deleted when the competition ends.
 - **Deterministic code only.** `make_submission.py` must regenerate `Decul.csv` byte-identically:
   no unseeded randomness, no network, no hosted model at inference time.
-- **Do not tune on the public 5 minutes.** 17 possessions cannot rank two versions (EVALUATION.md).
-  Use it to check correctness; use `--bootstrap 1000` before claiming one version beats another.
+- **The public 5 minutes check correctness and choose nothing** (RULES.md §2, EVALUATION.md — a
+  rule, not advice). Never train, tune or calibrate on them, and never use them to pick between
+  versions, not even with `--bootstrap 1000`. Decide on external data
+  (`validation/metrica_public.py`) or by the rule fixed in advance: a change is adopted only if it
+  is shown better on external data; otherwise the simpler version stays.
+- **Anything trained or tuned uses external data only** — other games, never the provided game or
+  its video. No hand labels, hand corrections or human-produced data about the provided game
+  (event data, corrected tracking) from any source, and never check the output against the video.
+  `docs/Decul.md` §2 "Labelled data" must list every labelled dataset used.
 
 ## Enforcement
 
@@ -52,7 +59,7 @@ not enabled yet. Hook tests: `python3 .claude/hooks/test_guard_data.py`.
 | `validation/v1_from_baseline_raw.py` | stage v1 decoded from the organisers' public `baseline_raw.csv` (no match data) |
 | `tests/test_pipeline.py` | synthetic checks of decoder, features, EM and restart tags — no data; Claude may run it |
 | `scripts/run_all.sh`, `scripts/final_checks.sh` | the user's runs on the match data: every stage scored; the M8 reproduction check that also prepares `~/decul-upload/`. Every `scripts/*.sh` and `experiments/*.sh` reads the data and is blocked for Claude |
-| `STARTER_KIT.md` | the organisers' original README, verbatim |
+| `STARTER_KIT.md` | the organisers' README, verbatim. Their `README.md` changes land here: on `git merge upstream/main`, keep our `README.md` and apply theirs to this file |
 | `docs/Decul.md` | the technical document (submitted as `Decul.md`) |
 | `README.md` | the submission's front page: method, results, install and run, file map |
 | `CLAUDE.md`, `docs/ROADMAP.md`, `.claude/` | how the work was organised, and the data guard |
