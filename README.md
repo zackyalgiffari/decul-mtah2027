@@ -28,7 +28,11 @@ uv venv --python 3.11 && uv pip sync requirements-lock.txt   # or: pip install -
 export MTAH_DATA_DIR=/path/to/mtah2027      # or unpack the data bundle into ./data
 python make_submission.py                   # -> evaluation/results/Decul.csv (stage v4)
 python evaluation/validate_submission.py evaluation/results/Decul.csv
+sha256sum evaluation/results/Decul.csv
 ```
+
+A correct run gives a file whose sha256 begins `c499eee84cf9ec00`, and the validator reports
+366 possessions of mean 10.5 s.
 
 Deterministic, CPU-only, no network: a second run, a run that re-parses the raw tracking
 (`--no-cache`) and a run from a fresh clone with a fresh environment produce the same file

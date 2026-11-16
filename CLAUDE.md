@@ -44,6 +44,10 @@ The hook reads command text only: a new script that opens the data without namin
 caught. That gap is closed only by the Bash sandbox (`sandbox.enabled`, needs `socat`), which is
 not enabled yet. Hook tests: `python3 .claude/hooks/test_guard_data.py`.
 
+The hook protects `data/`, `~/mtah-data` and `$MTAH_DATA_DIR` only if that variable was set before
+Claude Code started; data anywhere else is unguarded. On a new device keep the data in `./data/`
+and check the hook first (`docs/ROADMAP.md`, "Pindah ke perangkat lain").
+
 "Respect .gitignore" in `/config` is not a protection: it only filters the `@` file picker.
 
 ## File map

@@ -156,7 +156,7 @@ Ingat: tag `N/A` (semua throw-in) dan interval fase ≠ possession.
 > bukti per frame, tangani `Team = N/A` secara eksplisit, dan buat flag di `make_submission.py`
 > supaya saya bisa membandingkan dengan dan tanpa Smart Tagging.
 
-## M7 — Uji robustness dan bekukan parameter 🔄
+## M7 — Uji robustness dan bekukan parameter ✅
 
 > **Catatan 6 Nov, setelah klarifikasi aturan panitia** (upstream `f8f2629` dan email ke semua
 > peserta): window publik hanya untuk cek kebenaran pipeline, tidak untuk memilih antar versi.
@@ -236,6 +236,14 @@ v8 menangkap 201 frame D tambahan, tapi 347 frame permainan hidup ikut berubah m
 tag Smart Tagging terlalu kasar untuk menandai batas dead ball per frame. Menyetel ulang
 jendelanya berarti tuning ke 4 stoppage publik, jadi tidak dilakukan.
 
+**M7e, parameter v2/v3 yang belum divalidasi, diuji di Metrica lalu tidak diadopsi (16 Nov):**
+`TURNOVER_SHARE` dan `DEAD_S` tidak berpengaruh, `SCALE_M` lebih buruk. `CONTROL_M` yang lebih
+kecil terlihat lebih baik, tapi nilai terbaiknya tidak konsisten: 2 m di Game 1 (+0,059, bootstrap
+berpasangan [+0,038, +0,080]), 1–1,5 m di Game 2 (+0,03). Kalau nilai dipilih di satu pertandingan,
+keuntungannya tidak signifikan di pertandingan lain. Selain itu tracking Metrica lebih bersih, dan
+interaksinya dengan Smart Tagging tidak bisa diuji. Jadi tidak terbukti lebih baik, dan 3 m tetap
+dipakai. Script scratch: `experiments/sweep_metrica.py`, `experiments/paired_control_m.py`.
+
 **Kesimpulan v5–v8:** dengan aset yang dipakai (tracking + Smart Tagging), v4 sudah dekat batas
 yang bisa dicapai tanpa video. **v4 final**, kecuali kamu memulai eksperimen baru. Sebelum
 submit, jalankan `final_checks.sh` di branch `main`.
@@ -275,8 +283,13 @@ berperilaku mirip; pilih versi yang lebih sederhana kalau dua versi tidak bisa d
       tidak boleh dipakai untuk memilih versi, tuning hanya di data eksternal, dan dokumen teknis
       wajib mendaftar data berlabel. Upstream di-merge, `docs/Decul.md` disesuaikan (bagian "How
       the submitted stage was chosen" dan "Labelled data"), 6 Nov
-- [ ] **Kamu, setelah semua cek OK:** repo jadi public:
-      `gh repo edit zackyalgiffari/decul-mtah2027 --visibility public --accept-visibility-change-consequences`
+- [x] **Kamu:** `final_checks.sh` diulang di `main` = `b3226f8`, **ALL CHECKS PASSED** (16 Nov).
+      `Decul.csv` sha256 `c499eee84cf9ec00`, sama dengan 23 Okt: v5–v8 tidak mengubah v4.
+      `Decul.md` yang diupload: `711db8a48e274658`
+- [x] Audit riwayat git sebelum public (16 Nov): path yang cocok hanya `.claude/settings.json`,
+      `data/README.md` (pengecualian panitia) dan metadata ground truth publik
+- [x] Repo jadi public (16 Nov). `gh` 2.46 tidak punya `--accept-visibility-change-consequences`;
+      cukup `gh repo edit zackyalgiffari/decul-mtah2027 --visibility public`
 - [ ] **Kamu:** Google Form: nama tim `Decul`, upload kedua file dari `~/decul-upload/`, URL repo
 - [ ] Target submit **16 November** (sehari cadangan). Form bisa diedit sampai deadline, dan
       hanya respons terakhir yang dinilai.
@@ -292,6 +305,57 @@ berperilaku mirip; pilih versi yang lebih sederhana kalau dua versi tidak bisa d
 > **Prompt:**
 > Ini output `bash scripts/final_checks.sh` yang terbaru: <tempel output>. Kalau semua lolos,
 > buat repo decul-mtah2027 jadi public sekarang.
+
+## Pindah ke perangkat lain
+
+Repo ini public, jadi cukup di-clone. Data, environment, dan catatan lokal tidak ikut dan harus
+disiapkan sendiri di perangkat itu.
+
+**1. Clone dan buat environment** (Python 3.11, versi library dikunci di lockfile):
+```bash
+git clone https://github.com/zackyalgiffari/decul-mtah2027.git
+cd decul-mtah2027
+uv venv --python 3.11 && uv pip sync requirements-lock.txt
+source .venv/bin/activate
+```
+Kalau repo ada di drive Windows yang di-mount di WSL (`/mnt/...`, lambat untuk banyak file kecil),
+taruh venv di filesystem Linux, misalnya `~/venvs/mtah`, bukan `.venv` di dalam repo.
+
+**2. Taruh data di `./data/` di dalam repo** (ikuti `data/README.md`). Data guard Claude hanya
+melindungi tiga lokasi (`.claude/hooks/guard_data.py`, `PROTECTED_ROOTS`):
+- `./data/` di dalam repo, pilihan teraman karena selalu terlindungi
+- `~/mtah-data`
+- lokasi `MTAH_DATA_DIR`, **hanya kalau variabel itu sudah di-export sebelum `claude` dijalankan**.
+  Data di tempat lain, misalnya `~/Downloads`, **tidak** terlindungi.
+
+Jangan taruh data di folder yang tersinkron ke cloud (OneDrive, Google Drive, Dropbox).
+
+**3. Cek bahwa data guard aktif sebelum memakai Claude Code.** Hook butuh `python3` di PATH. Kalau
+`python3` tidak ada, hook sengaja memblokir semua tool (fail-closed), jadi gejalanya semua perintah
+Claude ditolak. Tes:
+```bash
+python3 .claude/hooks/test_guard_data.py      # harus: 77 of 77 cases correct (atau lebih)
+```
+
+**4. Reproduksi dan cocokkan hash** (kamu yang menjalankan, karena membaca data):
+```bash
+python make_submission.py
+python evaluation/validate_submission.py evaluation/results/Decul.csv
+sha256sum evaluation/results/Decul.csv        # harus diawali c499eee84cf9ec00
+```
+Validator harus melaporkan 366 possession, rata-rata 10,5 s. Run pertama lebih lama karena tracking
+diparse lalu disimpan di `data/cache/`. `bash scripts/final_checks.sh` menjalankan semuanya
+sekaligus. Di Windows tanpa WSL, pakai Git Bash.
+
+Sampai 16 Nov, hasil byte-identik baru dibuktikan di **satu mesin** (clone bersih + environment
+baru). Kalau hash di perangkat lain sama, catat di sini sebagai bukti reproduksi lintas mesin.
+Kalau berbeda, tempel ke Claude hash-nya dan output `validate_submission.py` saja.
+
+**5. Yang tidak ikut ter-clone:**
+- `CLAUDE.local.md` (ringkasan T&C, rahasia menurut §18). Salin manual, jangan lewat git.
+- Memori Claude Code (`~/.claude/projects/...`) dan `~/decul-upload/`. Keduanya ada per perangkat.
+
+**6. Setelah kompetisi:** salinan data di perangkat ini juga wajib dihapus (M9).
 
 ## M9 — Setelah kompetisi selesai ⬜
 
