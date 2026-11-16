@@ -104,6 +104,17 @@ CASES = [
     (BLOCK, "Bash", {"command": "eval \"cat " + D + "/tactical/x.txt\""}),
     (BLOCK, "Bash", {"command": "echo ok; python make_submission.py"}),
     (BLOCK, "Bash", {"command": "python3 -c \"print(open('" + D + "/tactical/x.txt').read())\""}),
+    # MCP tools: an upload or a file:// page would send the data to an outside service
+    (BLOCK, "mcp__claude-in-chrome__file_upload", {"paths": [D + "/tactical/x.xml"], "tabId": 1}),
+    (BLOCK, "mcp__plugin_playwright_playwright__browser_navigate",
+     {"url": "file://" + os.path.join(PROJECT, D, "tactical", "x.xml")}),
+    (BLOCK, "mcp__claude_ai_Figma__upload_assets", {"files": [{"path": "experiments/out.png"}]}),
+    (BLOCK, "mcp__plugin_playwright_playwright__browser_file_upload",
+     {"paths": ["~/mtah-" + D + "/broadcast/x.mp4"]}),
+    (BLOCK, "mcp__Neon__run_sql", {"sql": "COPY t FROM '" + os.path.join(PROJECT, D, "x.csv") + "'"}),
+    (ALLOW, "mcp__claude-in-chrome__navigate", {"url": "https://example.com/" + D + "/x", "tabId": 1}),
+    (ALLOW, "mcp__context7__query-docs", {"libraryId": "/numpy/numpy", "query": "argmax over axis"}),
+    (ALLOW, "mcp__claude-in-chrome__file_upload", {"paths": ["README.md"], "tabId": 1}),
 ]
 
 

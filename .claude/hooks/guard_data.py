@@ -4,7 +4,8 @@ The competition terms forbid giving the match data, or any extract of it, to a h
 written authorisation (OVERVIEW.md, "Use of Large Language Models", and the terms accepted at
 enrolment). Whatever a tool call reads lands in the conversation, so this hook refuses -- before it
 runs -- every call that would open the data, open something computed from it, or run code that
-reads it.
+reads it. MCP tools are checked too (settings.json matches `mcp__.*`): a browser upload or a cloud
+asset upload would send a file straight to an outside service.
 
     exit 0  allow the call
     exit 2  block it; stderr is shown to Claude as the reason
@@ -272,6 +273,34 @@ def check_bash(command, cwd):
     return None
 
 
+def strings_in(value):
+    """Every string inside a tool input, however deeply nested in lists and objects."""
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for item in value.values():
+            yield from strings_in(item)
+    elif isinstance(value, list):
+        for item in value:
+            yield from strings_in(item)
+
+
+def check_generic(tool, tool_input, cwd):
+    """Any other tool -- in practice MCP tools: browser uploads, asset uploads, cloud storage.
+
+    Their inputs have no fixed shape, so every string is checked: a path into the data, a
+    protected root spelled out, or a single-line string that resolves to a protected file.
+    """
+    for value in strings_in(tool_input):
+        if value.startswith("file://"):
+            value = value[len("file://"):]
+        if DATA_PATH.search(value) or any(root in value for root in PROTECTED_ROOTS):
+            return "{} names the match data ({!r})".format(tool, value[:120])
+        if "\n" not in value and len(value) < 1024 and is_protected(value, cwd):
+            return "{} points at output computed from the match data ({!r})".format(tool, value)
+    return None
+
+
 def main():
     try:
         event = json.load(sys.stdin)
@@ -290,6 +319,8 @@ def main():
         reason = check_search(tool, tool_input, cwd)
     elif tool == "Bash":
         reason = check_bash(tool_input.get("command") or "", cwd)
+    else:
+        reason = check_generic(tool, tool_input, cwd)
 
     if reason:
         sys.stderr.write(MESSAGE.format(reason=reason))
