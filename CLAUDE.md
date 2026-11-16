@@ -38,11 +38,16 @@ user-level setting is involved):
 |---|---|
 | `permissions.deny` | Read and Edit of `data/**` and `~/mtah-data/**` |
 | `permissions.ask` | any edit under `.claude/` needs the user's approval |
-| `.claude/hooks/guard_data.py` (PreToolUse, fail-closed) | file tools on the data or on outputs computed from it (`evaluation/results/[Dd]ecul*.csv`, data-like files in `experiments/`); shell commands that name the data, list it, run code that reads it (`make_submission.py`, `starter/baseline.py`, the loaders, notebooks, any `scripts/*.sh` or `experiments/*.sh`), or search recursively into it |
+| `.claude/hooks/guard_data.py` (PreToolUse, `onFailure: "block"`) | file tools on the data or on outputs computed from it (`evaluation/results/[Dd]ecul*.csv`, data-like files in `experiments/`); shell commands that name the data, list it, run code that reads it (`make_submission.py`, `starter/baseline.py`, the loaders, notebooks, any `scripts/*.sh` or `experiments/*.sh`), or search recursively into it; MCP tools (`mcp__.*`: browser uploads, `file://` pages, asset or cloud uploads) whose input names the data or such an output |
+| `sandbox` (OS level, every Bash command) | reading `./data` and `~/mtah-data`, even from a script that never names them (`filesystem.denyRead`); running outside the sandbox (`allowUnsandboxedCommands: false`); network except `github.com`, `api.github.com` |
 
 The hook reads command text only: a new script that opens the data without naming it is not
-caught. That gap is closed only by the Bash sandbox (`sandbox.enabled`, needs `socat`), which is
-not enabled yet. Hook tests: `python3 .claude/hooks/test_guard_data.py`.
+caught there, but the sandbox stops it. The sandbox does not cover `$MTAH_DATA_DIR` (settings
+cannot read environment variables), nor `!` commands the user types, which run outside it. It uses
+Seatbelt on macOS; Linux and WSL2 need `bubblewrap` and `socat`. `onFailure: "block"` needs Claude
+Code 2.1.295 or later; on older versions a crashing hook lets the call through. Inside the sandbox
+git warns that it cannot open `data/` -- expected; run merges that touch `data/README.md` yourself.
+Hook tests: `python3 .claude/hooks/test_guard_data.py`.
 
 The hook protects `data/`, `~/mtah-data` and `$MTAH_DATA_DIR` only if that variable was set before
 Claude Code started; data anywhere else is unguarded. On a new device keep the data in `./data/`

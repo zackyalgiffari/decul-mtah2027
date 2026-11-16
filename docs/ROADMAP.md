@@ -333,12 +333,16 @@ melindungi tiga lokasi (`.claude/hooks/guard_data.py`, `PROTECTED_ROOTS`):
 
 Jangan taruh data di folder yang tersinkron ke cloud (OneDrive, Google Drive, Dropbox).
 
-**3. Cek bahwa data guard aktif sebelum memakai Claude Code.** Hook butuh `python3` di PATH. Kalau
-`python3` tidak ada, hook sengaja memblokir semua tool (fail-closed), jadi gejalanya semua perintah
-Claude ditolak. Tes:
+**3. Cek bahwa data guard aktif sebelum memakai Claude Code.** Hook butuh `python3` di PATH dan
+Claude Code ≥ 2.1.295 (`claude --version`). Di versi lama, `onFailure: "block"` diabaikan, sehingga
+hook yang crash meloloskan perintah. Kalau `python3` tidak ada, hook sengaja memblokir semua tool
+(fail-closed), jadi gejalanya semua perintah Claude ditolak. Di Linux/WSL2, pasang dulu
+`bubblewrap` dan `socat` agar sandbox bisa jalan; di macOS tidak perlu. Tes:
 ```bash
-python3 .claude/hooks/test_guard_data.py      # harus: 77 of 77 cases correct (atau lebih)
+python3 .claude/hooks/test_guard_data.py      # harus: 85 of 85 cases correct (atau lebih)
 ```
+Lalu di Claude Code jalankan `/sandbox`: sandbox harus aktif, dengan `./data` dan `~/mtah-data` di
+denyRead.
 
 **4. Reproduksi dan cocokkan hash** (kamu yang menjalankan, karena membaca data):
 ```bash
