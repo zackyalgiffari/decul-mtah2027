@@ -311,15 +311,18 @@ berperilaku mirip; pilih versi yang lebih sederhana kalau dua versi tidak bisa d
 Repo ini public, jadi cukup di-clone. Data, environment, dan catatan lokal tidak ikut dan harus
 disiapkan sendiri di perangkat itu.
 
-**1. Clone dan buat environment** (Python 3.11, versi library dikunci di lockfile):
+**1. Clone dan buat environment** (butuh `git` dan `uv`; Python 3.11, versi library dikunci di
+lockfile). Venv harus di `~/venvs/mtah`, karena di situ `scripts/final_checks.sh` mencarinya
+(`PY`, baris 17):
 ```bash
 git clone https://github.com/zackyalgiffari/decul-mtah2027.git
 cd decul-mtah2027
-uv venv --python 3.11 && uv pip sync requirements-lock.txt
-source .venv/bin/activate
+git config user.email "89745820+zackyalgiffari@users.noreply.github.com"   # supaya push tidak ditolak (GH007)
+uv venv --python 3.11 ~/venvs/mtah
+uv pip sync --python ~/venvs/mtah/bin/python requirements-lock.txt
+source ~/venvs/mtah/bin/activate
 ```
-Kalau repo ada di drive Windows yang di-mount di WSL (`/mnt/...`, lambat untuk banyak file kecil),
-taruh venv di filesystem Linux, misalnya `~/venvs/mtah`, bukan `.venv` di dalam repo.
+Kalau venv ada di tempat lain, jalankan dengan `PY=/path/ke/python bash scripts/final_checks.sh`.
 
 **2. Taruh data di `./data/` di dalam repo** (ikuti `data/README.md`). Data guard Claude hanya
 melindungi tiga lokasi (`.claude/hooks/guard_data.py`, `PROTECTED_ROOTS`):
@@ -345,7 +348,9 @@ sha256sum evaluation/results/Decul.csv        # harus diawali c499eee84cf9ec00
 ```
 Validator harus melaporkan 366 possession, rata-rata 10,5 s. Run pertama lebih lama karena tracking
 diparse lalu disimpan di `data/cache/`. `bash scripts/final_checks.sh` menjalankan semuanya
-sekaligus. Di Windows tanpa WSL, pakai Git Bash.
+sekaligus: dua run, clone bersih dari `main` dengan environment baru (butuh internet untuk `uv`),
+validasi, lalu menyalin `Decul.csv` dan `Decul.md` ke `~/decul-upload/` kalau semua cek lolos.
+Di Windows tanpa WSL, pakai Git Bash.
 
 Sampai 16 Nov, hasil byte-identik baru dibuktikan di **satu mesin** (clone bersih + environment
 baru). Kalau hash di perangkat lain sama, catat di sini sebagai bukti reproduksi lintas mesin.
