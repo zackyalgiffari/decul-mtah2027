@@ -356,9 +356,14 @@ sekaligus: dua run, clone bersih dari `main` dengan environment baru (butuh inte
 validasi, lalu menyalin `Decul.csv` dan `Decul.md` ke `~/decul-upload/` kalau semua cek lolos.
 Di Windows tanpa WSL, pakai Git Bash.
 
-Sampai 16 Nov, hasil byte-identik baru dibuktikan di **satu mesin** (clone bersih + environment
-baru). Kalau hash di perangkat lain sama, catat di sini sebagai bukti reproduksi lintas mesin.
-Kalau berbeda, tempel ke Claude hash-nya dan output `validate_submission.py` saja.
+Hasil byte-identik sudah dibuktikan di **dua mesin**:
+- mesin pertama: clone bersih + environment baru
+- 16 Nov, mesin kedua: macOS arm64, Python 3.11.15, venv baru dari `requirements-lock.txt`.
+  `make_submission.py` menghasilkan SHA-256 `c499eee84cf9ec00…85c85a2`, dan validator melaporkan
+  366 possession, rata-rata 10,5 s.
+
+Kalau hash di perangkat lain berbeda, tempel ke Claude hash-nya dan output `validate_submission.py`
+saja.
 
 **5. Yang tidak ikut ter-clone:**
 - `CLAUDE.local.md` (ringkasan T&C, rahasia menurut §18). Salin manual, jangan lewat git.
