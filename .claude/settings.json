@@ -10,6 +10,16 @@
       "Edit(./.claude/**)"
     ]
   },
+  "sandbox": {
+    "enabled": true,
+    "allowUnsandboxedCommands": false,
+    "filesystem": {
+      "denyRead": ["./data", "~/mtah-data"]
+    },
+    "network": {
+      "allowedDomains": ["github.com", "api.github.com"]
+    }
+  },
   "hooks": {
     "PreToolUse": [
       {
